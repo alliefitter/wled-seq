@@ -1,0 +1,93 @@
+[project]
+name = "wled-seq"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Allie Fitter",email = "fitterj@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "aiomqtt (>=2.4.0,<3.0.0)",
+    "pydantic (>=2.11.9,<3.0.0)",
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "dynaconf (>=3.2.11,<4.0.0)",
+    "alembic (>=1.16.5,<2.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "fastapi (>=0.118.0,<0.119.0)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "pydantic-to-typescript (>=2.0.0,<3.0.0)",
+    "datamodel-code-generator (>=0.35.0,<0.36.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "sqlalchemy-utils (>=0.42.0,<0.43.0)",
+]
+
+[tool.poetry]
+packages = [
+    { include = "led_daemon", from = "src" },
+    { include = "api", from = "src" },
+]
+
+[tool.poetry.scripts]
+wled-seqd = "led_daemon.main:main"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.13.2"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Set the minimum Python version supported by the project.
+target-version = "py313"
+
+# Maximum line length for code (e.g., compatible with Black).
+line-length = 120
+
+# Define which files Ruff should check.
+include = ["*.py", "*.pyi"]
+
+# Exclude directories or files from Ruff checks.
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+# Linter configuration.
+[tool.ruff.lint]
+# Select specific rule sets to enable.
+# E and W: pycodestyle errors and warnings.
+# F: pyflakes errors.
+# I: isort rules for imports.
+# N: PEP8 naming rules.
+select = ["E", "W", "F", "I", "N"]
+
+# Ignore specific rules project-wide.
+ignore = ["E501"] # Example: Ignore line-too-long warnings
+
+# Extend selected rule sets with additional checks (e.g., for docstrings).
+# extend-select = ["D"] # Uncomment to enable pydocstyle rules
+
+# Specific settings for individual lint plugins.
+[tool.ruff.lint.pydocstyle]
+convention = "pep257" # Enforce PEP 257 docstring conventions
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10 # Maximum cyclomatic complexity allowed
+
+# Formatter configuration.
+[tool.ruff.format]
+# Indent style (e.g., "space" or "tab").
+indent-style = "space"
+# Line ending style (e.g., "lf" for Unix-style).
+line-ending = "lf"
+# Whether to format code snippets within docstrings.
+docstring-code-format = true
+# Line length for code snippets within docstrings.
+docstring-code-line-length = 120

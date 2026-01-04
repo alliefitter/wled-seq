@@ -1,0 +1,3 @@
+db_url = "sqlite:///wled_seq.db"
+mqtt_url = "mqtt://localhost"
+api_url = "http://localhost:8080"

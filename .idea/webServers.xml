@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="27698980-2597-4dd2-9720-dc13886ef0e5" name="wled-seq">
+        <fileTransfer accessType="SFTP" host="wled-seq" port="22" sshConfigId="cabc93ea-aeb2-4fcf-b46a-e1973d19a539" sshConfig="afitter@wled-seq:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="2248424a-81b1-465c-9a3e-2d45c3bc02ba" name="steam deck">
+        <fileTransfer accessType="SFTP" host="steamdeck.home" port="22" sshConfigId="cafdb7a4-855f-4bd6-bab5-7e9b6a8110f2" sshConfig="deck@steamdeck.home:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

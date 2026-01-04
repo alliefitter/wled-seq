@@ -1,0 +1,404 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Led Sequence",
+  "type": "object",
+  "required": [
+    "elements"
+  ],
+  "properties": {
+    "repeat": {
+      "type": "boolean",
+      "title": "Repeat",
+      "description": "Repeat the sequence until changed."
+    },
+    "random": {
+      "type": "boolean",
+      "title": "Random",
+      "description": "Execute items in a random order."
+    },
+    "elements": {
+      "type": "array",
+      "title": "Elements",
+      "description": "An array of sequence elements.",
+      "items": {
+        "type": "object",
+        "title": "Wled Sequence Item",
+        "properties": {
+          "sleep_time": {
+            "type": "number",
+            "title": "Sleep Time",
+            "description": "How long the sequence item should be displayed until the next item is displayed."
+          },
+          "$ref": {
+            "type": "string",
+            "description": "Reference another sequence by Id.",
+            "title": "Reference Sequence"
+          },
+          "state": {
+            "type": "object",
+            "title": "Wled State",
+            "description": "The WLED JSON API state object. See: https://kno.wled.ge/interfaces/json-api/",
+            "additionalProperties": false,
+            "properties": {
+              "on": {
+                "type": "boolean",
+                "title": "On",
+                "description": "On/Off state of the light. You can also use 't' to toggle."
+              },
+              "bri": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255,
+                "title": "Brightness",
+                "description": "Brightness of the light (0–255)."
+              },
+              "transition": {
+                "type": "integer",
+                "minimum": 0,
+                "title": "Transition",
+                "description": "Default transition time in tenths of a second."
+              },
+              "tt": {
+                "type": "integer",
+                "minimum": 0,
+                "title": "Temp Transition",
+                "description": "Temporary transition time for next change only."
+              },
+              "seg": {
+                "type": "array",
+                "title": "Segment",
+                "description": "Array of segment objects.",
+                "items": {
+                  "type": "object",
+                  "title": "Segment",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "title": "Segment Id",
+                      "description": "Segment ID."
+                    },
+                    "on": {
+                      "type": "boolean",
+                      "title": "On",
+                      "description": "Enable/disable this segment."
+                    },
+                    "bri": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "title": "Brightness",
+                      "description": "Segment brightness."
+                    },
+                    "rev": {
+                      "type": "boolean",
+                      "title": "Reverse",
+                      "description": "Reverse horizontally (1D) or X-axis (2D)."
+                    },
+                    "fx": {
+                      "type": [
+                        "integer",
+                        "string"
+                      ],
+                      "title": "Effect",
+                      "description": "Effect ID or special code (~, ~-, r)."
+                    },
+                    "pal": {
+                      "type": [
+                        "integer",
+                        "string"
+                      ],
+                      "title": "Palette",
+                      "description": "Palette ID or 'r' for random."
+                    },
+                    "col": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 3,
+                      "title": "Color",
+                      "description": "Colors: up to 3 color entries. Each entry can be [R,G,B] or [R,G,B,W] (0–255) or a hex string.",
+                      "items": {
+                        "type": [
+                          "array",
+                          "string"
+                        ],
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 255
+                        },
+                        "minItems": 3,
+                        "maxItems": 4,
+                        "pattern": "^[0-9A-Fa-f]{6,8}$"
+                      }
+                    },
+                    "sx": {
+                      "type": [
+                        "integer",
+                        "string"
+                      ],
+                      "title": "Speed",
+                      "description": "Effect speed or code."
+                    },
+                    "ix": {
+                      "type": [
+                        "integer",
+                        "string"
+                      ],
+                      "title": "Intensity",
+                      "description": "Effect intensity or code."
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "title": "Start",
+                      "description": "Start LED index."
+                    },
+                    "stop": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "title": "Stop",
+                      "description": "Stop LED index (exclusive)."
+                    },
+                    "startY": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "title": "Start Y",
+                      "description": "Start row (2D mode)."
+                    },
+                    "stopY": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "title": "Stop Y",
+                      "description": "Stop row (2D mode)."
+                    },
+                    "len": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "title": "Length",
+                      "description": "Length (stop - start)."
+                    },
+                    "grp": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "title": "Group",
+                      "description": "LEDs per group."
+                    },
+                    "spc": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "title": "Space",
+                      "description": "LEDs to skip between groups."
+                    },
+                    "of": {
+                      "type": "integer",
+                      "title": "Offset",
+                      "description": "Offset/rotation amount."
+                    },
+                    "rY": {
+                      "type": "boolean",
+                      "title": "Reverse Y",
+                      "description": "Reverse vertically (2D)."
+                    },
+                    "mi": {
+                      "type": "boolean",
+                      "title": "Mirror",
+                      "description": "Mirror horizontally (1D)."
+                    },
+                    "mY": {
+                      "type": "boolean",
+                      "title": "Mirror Y",
+                      "description": "Mirror vertically (2D)."
+                    },
+                    "tp": {
+                      "type": "boolean",
+                      "title": "Transpose",
+                      "description": "Transpose (swap X/Y axes in 2D)."
+                    },
+                    "cct": {
+                      "type": "integer",
+                      "title": "Color Temp",
+                      "description": "Color temperature (0–255)."
+                    },
+                    "c1": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "title": "Custom 1",
+                      "description": "Custom parameter 1."
+                    },
+                    "c2": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255,
+                      "title": "Custom 2",
+                      "description": "Custom parameter 2."
+                    },
+                    "c3": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 31,
+                      "title": "Custom 3",
+                      "description": "Custom parameter 3."
+                    },
+                    "o1": {
+                      "type": "boolean",
+                      "title": "Boolean 1",
+                      "description": "Custom boolean 1."
+                    },
+                    "o2": {
+                      "type": "boolean",
+                      "title": "Boolean 2",
+                      "description": "Custom boolean 2."
+                    },
+                    "o3": {
+                      "type": "boolean",
+                      "title": "Boolean 3",
+                      "description": "Custom boolean 3."
+                    },
+                    "sel": {
+                      "type": "boolean",
+                      "title": "Select",
+                      "description": "Select this segment."
+                    },
+                    "m12": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 4,
+                      "title": "Matrix",
+                      "description": "Matrix expand mode (0=pixels, 1=bar, 2=arc, 3=corner, etc)."
+                    },
+                    "fxdef": {
+                      "type": "boolean",
+                      "title": "Effect Defaults",
+                      "description": "Load default parameters from effect."
+                    },
+                    "set": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 3,
+                      "title": "Set/Group",
+                      "description": "Segment group/set index."
+                    },
+                    "rpt": {
+                      "type": "boolean",
+                      "title": "Repeat",
+                      "description": "Repeat this segment pattern to fill LEDs."
+                    }
+                  }
+                }
+              },
+              "ps": {
+                "type": "integer",
+                "title": "Preset",
+                "description": "Preset ID to apply."
+              },
+              "psave": {
+                "type": "integer",
+                "title": "Preset Id",
+                "description": "Save current state to given preset ID."
+              },
+              "time": {
+                "type": "integer",
+                "minimum": 0,
+                "title": "Time",
+                "description": "Set system time (Unix timestamp)."
+              },
+              "mainseg": {
+                "type": "integer",
+                "minimum": 0,
+                "title": "Main Segment",
+                "description": "Index of the main segment."
+              },
+              "nl": {
+                "type": "object",
+                "title": "Nightlight",
+                "description": "Nightlight configuration.",
+                "additionalProperties": false,
+                "properties": {
+                  "on": {
+                    "type": "boolean",
+                    "title": "On",
+                    "description": "Turn nightlight on or off."
+                  },
+                  "dur": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "title": "Duration",
+                    "description": "Duration in minutes."
+                  },
+                  "mode": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "title": "Mode",
+                    "description": "Mode: 0=instant, 1=fade, 2=color fade, 3=sunrise."
+                  },
+                  "tbri": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255,
+                    "title": "Target Brightness",
+                    "description": "Target brightness at the end."
+                  }
+                }
+              },
+              "udpn": {
+                "type": "object",
+                "title": "UDPN Sync",
+                "description": "UDP sync configuration.",
+                "additionalProperties": false,
+                "properties": {
+                  "send": {
+                    "type": "boolean",
+                    "title": "Send",
+                    "description": "Enable UDP send."
+                  },
+                  "recv": {
+                    "type": "boolean",
+                    "title": "Receive",
+                    "description": "Enable UDP receive."
+                  },
+                  "sgrp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255,
+                    "title": "Send Group",
+                    "description": "Send group."
+                  },
+                  "rgrp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255,
+                    "title": "Receive Group",
+                    "description": "Receive group."
+                  },
+                  "nn": {
+                    "type": "boolean",
+                    "title": "No Notifications",
+                    "description": "Do not send notifications."
+                  }
+                }
+              },
+              "live": {
+                "type": "boolean",
+                "title": "Live",
+                "description": "Enable or disable live data mode."
+              },
+              "lor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2,
+                "title": "Live Override",
+                "description": "Live data override mode: 0=off, 1=until live ends, 2=until reboot."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

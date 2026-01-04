@@ -1,0 +1,34 @@
+# Python-specific files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Development and build artifacts
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+build/
+dist/
+*.egg-info/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+cover/
+
+# Database files
+*.sqlite3
+*.sqlite3-journal
+
+# Environment variables
+.env

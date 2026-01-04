@@ -1,0 +1,887 @@
+{
+  "$defs": {
+    "ColItem": {
+      "maximum": 255,
+      "minimum": 0,
+      "title": "ColItem",
+      "type": "integer"
+    },
+    "Nl": {
+      "additionalProperties": false,
+      "properties": {
+        "on": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Turn nightlight on or off.",
+          "title": "On"
+        },
+        "dur": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Duration in minutes.",
+          "title": "Dur"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mode: 0=instant, 1=fade, 2=color fade, 3=sunrise.",
+          "title": "Mode"
+        },
+        "tbri": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Target brightness at the end.",
+          "title": "Tbri"
+        }
+      },
+      "title": "Nl",
+      "type": "object"
+    },
+    "On": {
+      "enum": [
+        true,
+        false,
+        "t",
+        "f"
+      ],
+      "title": "On"
+    },
+    "SegItem": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segment ID.",
+          "title": "Id"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Start LED index.",
+          "title": "Start"
+        },
+        "stop": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stop LED index (exclusive).",
+          "title": "Stop"
+        },
+        "startY": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Start row (2D mode).",
+          "title": "Starty"
+        },
+        "stopY": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stop row (2D mode).",
+          "title": "Stopy"
+        },
+        "len": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Length (stop - start).",
+          "title": "Len"
+        },
+        "grp": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "LEDs per group.",
+          "title": "Grp"
+        },
+        "spc": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "LEDs to skip between groups.",
+          "title": "Spc"
+        },
+        "of": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Offset/rotation amount.",
+          "title": "Of"
+        },
+        "rev": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reverse horizontally (1D) or X-axis (2D).",
+          "title": "Rev"
+        },
+        "rY": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reverse vertically (2D).",
+          "title": "Ry"
+        },
+        "on": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable/disable this segment.",
+          "title": "On"
+        },
+        "bri": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segment brightness.",
+          "title": "Bri"
+        },
+        "mi": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mirror horizontally (1D).",
+          "title": "Mi"
+        },
+        "mY": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mirror vertically (2D).",
+          "title": "My"
+        },
+        "tp": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Transpose (swap X/Y axes in 2D).",
+          "title": "Tp"
+        },
+        "cct": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Color temperature (0\u2013255).",
+          "title": "Cct"
+        },
+        "col": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/ColItem"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "pattern": "^[0-9A-Fa-f]{6,8}$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "maxItems": 3,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Colors: up to 3 [R,G,B] or [R,G,B,W] arrays or hex strings.",
+          "title": "Col"
+        },
+        "fx": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Effect ID or special code (~, ~-, r).",
+          "title": "Fx"
+        },
+        "sx": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Effect speed or code.",
+          "title": "Sx"
+        },
+        "ix": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Effect intensity or code.",
+          "title": "Ix"
+        },
+        "c1": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom parameter 1.",
+          "title": "C1"
+        },
+        "c2": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom parameter 2.",
+          "title": "C2"
+        },
+        "c3": {
+          "anyOf": [
+            {
+              "maximum": 31,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom parameter 3.",
+          "title": "C3"
+        },
+        "o1": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom boolean 1.",
+          "title": "O1"
+        },
+        "o2": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom boolean 2.",
+          "title": "O2"
+        },
+        "o3": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Custom boolean 3.",
+          "title": "O3"
+        },
+        "pal": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Palette ID or 'r' for random.",
+          "title": "Pal"
+        },
+        "sel": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Select this segment.",
+          "title": "Sel"
+        },
+        "m12": {
+          "anyOf": [
+            {
+              "maximum": 4,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Matrix expand mode (0=pixels, 1=bar, 2=arc, 3=corner, etc).",
+          "title": "M12"
+        },
+        "fxdef": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Load default parameters from effect.",
+          "title": "Fxdef"
+        },
+        "set": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segment group/set index.",
+          "title": "Set"
+        },
+        "rpt": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repeat this segment pattern to fill LEDs.",
+          "title": "Rpt"
+        }
+      },
+      "title": "SegItem",
+      "type": "object"
+    },
+    "Udpn": {
+      "additionalProperties": false,
+      "properties": {
+        "send": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable UDP send.",
+          "title": "Send"
+        },
+        "recv": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable UDP receive.",
+          "title": "Recv"
+        },
+        "sgrp": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Send group.",
+          "title": "Sgrp"
+        },
+        "rgrp": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Receive group.",
+          "title": "Rgrp"
+        },
+        "nn": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Do not send notifications.",
+          "title": "Nn"
+        }
+      },
+      "title": "Udpn",
+      "type": "object"
+    },
+    "WledSequenceElement": {
+      "properties": {
+        "$ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference another sequence by Id.",
+          "title": "Reference Sequence"
+        },
+        "state": {
+          "$ref": "#/$defs/WledState",
+          "description": "The WLED JSON API state object. See: https://kno.wled.ge/interfaces/json-api/"
+        },
+        "sleep_time": {
+          "default": 0.0,
+          "description": "How long the sequence element should be displayed until the next element is displayed.",
+          "title": "Sleep Time",
+          "type": "number"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "title": "WledSequenceElement",
+      "type": "object"
+    },
+    "WledState": {
+      "additionalProperties": false,
+      "properties": {
+        "on": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/On"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "On/Off state of the light. You can also use 't' to toggle."
+        },
+        "bri": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Brightness of the light (0\u2013255).",
+          "title": "Bri"
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default transition time in tenths of a second.",
+          "title": "Transition"
+        },
+        "tt": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Temporary transition time for next change only.",
+          "title": "Tt"
+        },
+        "ps": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Preset ID to apply.",
+          "title": "Ps"
+        },
+        "psave": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Save current state to given preset ID.",
+          "title": "Psave"
+        },
+        "nl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Nl"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Nightlight configuration."
+        },
+        "udpn": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Udpn"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "UDP sync configuration."
+        },
+        "live": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable or disable live data mode.",
+          "title": "Live"
+        },
+        "lor": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Live data override mode: 0=off, 1=until live ends, 2=until reboot.",
+          "title": "Lor"
+        },
+        "time": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set system time (Unix timestamp).",
+          "title": "Time"
+        },
+        "mainseg": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Index of the main segment.",
+          "title": "Mainseg"
+        },
+        "seg": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SegItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Array of segment objects.",
+          "title": "Seg"
+        }
+      },
+      "title": "WledState",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "repeat": {
+      "default": false,
+      "description": "Repeat the sequence until changed.",
+      "title": "Repeat",
+      "type": "boolean"
+    },
+    "random": {
+      "default": false,
+      "description": "Execute elements in a random order.",
+      "title": "Random",
+      "type": "boolean"
+    },
+    "sequence": {
+      "description": "An array of sequence elements.",
+      "items": {
+        "$ref": "#/$defs/WledSequenceElement"
+      },
+      "title": "Sequence",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sequence"
+  ],
+  "title": "LedSequence",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+version: 3
+tasks:
+  infra-up:
+    cmd: docker compose up -d mqtt
+
+  infra-down:
+    cmd: docker compose down
+
+  build:
+    cmds:
+      - docker compose -f docker-compose.yaml build
+      - docker image tag wled_seq-api:latest horde.home:5000/wled-seq-api:latest
+      - docker image tag wled_seq-frontend:latest horde.home:5000/wled-seq-frontend:latest
+      - docker image tag wled_seq-led-daemon:latest horde.home:5000/wled-seqd:latest
+      - docker push horde.home:5000/wled-seq-api:latest
+      - docker push horde.home:5000/wled-seq-frontend:latest
+      - docker push horde.home:5000/wled-seqd:latest

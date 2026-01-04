@@ -1,0 +1,37 @@
+services:
+  api:
+    restart: unless-stopped
+    build:
+      context: backend
+      dockerfile: ../share/docker/api.Dockerfile
+    ports:
+      - "8080:8000"
+    environment:
+      WLED_SEQ_MQTT_URL: mqtt
+      WLED_SEQ_DB_URL: sqlite:///wled-seq.db
+    volumes:
+      - ./share/db/wled-seq.db:/app/wled-seq.db
+  led-daemon:
+    depends_on:
+      - mqtt
+    restart: unless-stopped
+    build:
+      context: backend
+      dockerfile: ../share/docker/led-daemon.Dockerfile
+    environment:
+      WLED_SEQ_MQTT_URL: mqtt
+      WLED_SEQ_DB_URL: sqlite:///wled_seq.db
+  frontend:
+    restart: unless-stopped
+    build:
+      context: frontend
+      dockerfile: ../share/docker/frontend.Dockerfile
+    environment:
+      WLED_SEQ_API_URL: http://localhost:8080
+    ports:
+      - "8081:80"
+  mqtt:
+    image: eclipse-mosquitto:latest
+    restart: unless-stopped
+    volumes:
+      - ./share/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
