@@ -39,7 +39,9 @@ function Colors({
     }
   };
   useEffect(() => {
-    updateParent(colorData);
+    if (JSON.stringify(colorData) !== JSON.stringify(value)) {
+      updateParent(colorData);
+    }
   }, [colorData]);
   useEffect(() => {
     setNumberOfColors(effect?.colors?.length || 0);

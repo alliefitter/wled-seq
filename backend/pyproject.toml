@@ -3,7 +3,7 @@ name = "wled-seq"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Allie Fitter",email = "fitterj@gmail.com"}
+    { name = "Allie Fitter", email = "fitterj@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
@@ -20,6 +20,8 @@ dependencies = [
     "datamodel-code-generator (>=0.35.0,<0.36.0)",
     "pyyaml (>=6.0.3,<7.0.0)",
     "sqlalchemy-utils (>=0.42.0,<0.43.0)",
+    "psycopg2 (>=2.9.11,<3.0.0)",
+    "logfmter (>=0.0.11,<0.0.12)",
 ]
 
 [tool.poetry]
@@ -33,6 +35,7 @@ wled-seqd = "led_daemon.main:main"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.13.2"
+mypy = "^1.19.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -43,7 +46,7 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py313"
 
 # Maximum line length for code (e.g., compatible with Black).
-line-length = 120
+line-length = 100
 
 # Define which files Ruff should check.
 include = ["*.py", "*.pyi"]

@@ -1,69 +1,107 @@
-import asyncio
 import signal
-from asyncio import create_task
+from asyncio import (
+    CancelledError,
+    all_tasks,
+    create_task,
+    current_task,
+    gather,
+    new_event_loop,
+    set_event_loop,
+)
 from logging import getLogger
 from logging.config import dictConfig
 
 import yaml
 from aiomqtt import Client
 
-from led_daemon.wled import Wled
-from lib.model.sequence import RandomSequenceMessage, SequenceMessage
+from led_daemon.service import Service
+from lib.model.sequence import (
+    PlaylistMessage,
+    RandomSequenceMessage,
+    SequenceMessage,
+    StopOrPowerOffMessage,
+)
 from lib.settings import get_settings
 
 logger = getLogger(__name__)
 settings = get_settings()
 
 
-async def listen(stop_event):
-    wled = {}
+async def receive_messages():
+    service = Service()
     async with Client(settings.mqtt_url) as client:
         await client.subscribe("wled-seq/#")
         async for message in client.messages:
-            if stop_event.is_set():
-                break
-
             logger.info(f"Received message: {message.topic}")
             match str(message.topic):
                 case "wled-seq/execute":
-                    sequence_message = SequenceMessage.model_validate_json(
-                        message.payload
-                    )
-                    if sequence_message.host not in wled:
-                        wled[sequence_message.host] = Wled(str(sequence_message.host))
                     create_task(
-                        wled[sequence_message.host].execute(sequence_message.sequence)
+                        service.execute_sequence(
+                            SequenceMessage.model_validate_json(message.payload)
+                        )
                     )
-                case "wled-seq/random":
-                    sequence_message = RandomSequenceMessage.model_validate_json(
-                        message.payload
-                    )
-                    if sequence_message.host not in wled:
-                        wled[sequence_message.host] = Wled(str(sequence_message.host))
 
+                case "wled-seq/random":
                     create_task(
-                        wled[sequence_message.host].execute_random(sequence_message)
+                        service.execute_random(
+                            RandomSequenceMessage.model_validate_json(message.payload)
+                        )
                     )
+
+                case "wled-seq/playlist":
+                    create_task(
+                        service.execute_playlist(
+                            PlaylistMessage.model_validate_json(message.payload)
+                        )
+                    )
+
+                case "wled-seq/stop":
+                    create_task(
+                        service.stop(
+                            StopOrPowerOffMessage.model_validate_json(message.payload).host
+                        )
+                    )
+
                 case _:
                     raise ValueError(f"Unknown topic: {message.topic}")
 
 
+async def listen():
+    try:
+        await receive_messages()
+
+    except CancelledError:
+        pass
+
+
+async def shutdown():
+    tasks = [t for t in all_tasks() if t is not current_task()]
+    for task in tasks:
+        task.cancel()
+    await gather(*tasks, return_exceptions=True)
+
+
 def main():
     with open("./logging.yaml", "rt") as f:
-        config = yaml.safe_load(f)
-    dictConfig(config)
+        dictConfig(yaml.safe_load(f))
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = new_event_loop()
+    set_event_loop(loop)
 
-    stop_event = asyncio.Event()
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(sig, stop_event.set)
+    stop = loop.create_future()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, stop.set_result, None)
+
+    loop.create_task(listen())
 
     try:
-        loop.run_until_complete(listen(stop_event))
+        loop.run_until_complete(stop)
     finally:
+        loop.run_until_complete(shutdown())
         loop.close()
+
+    logger.info("Exiting...")
 
 
 if __name__ == "__main__":

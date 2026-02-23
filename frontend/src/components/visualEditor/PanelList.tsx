@@ -5,21 +5,25 @@ import CloseIcon from "@mui/icons-material/Close";
 import Panel from "./Panel.tsx";
 import type { Effects, Palettes } from "../../api.ts";
 import type { JSONSchema7 } from "json-schema";
-import type { SequenceListItem } from "../../types/api";
+import type { Segment, SequenceListItem, VisualSegItem } from "../../types/api";
+import SegmentPanel from "./SegmentPanel.tsx";
 
 type PanelListProps = {
-  value: { [key: string]: any }[];
+  field: string;
+  value: { [key: string]: unknown }[];
   schema: JSONSchema7;
-  updateParent: (value: any) => void;
+  updateParent: (value: unknown) => void;
   removeSelf: () => void;
   required: boolean;
   readOnly: boolean;
   effects: Effects[];
   palettes: Palettes[];
   references: SequenceListItem[];
+  segments: Segment[];
 };
 
 function PanelList({
+  field,
   value,
   schema,
   updateParent,
@@ -29,14 +33,20 @@ function PanelList({
   effects,
   palettes,
   references,
+  segments,
 }: PanelListProps) {
-  const [data, setData] = useState<{ [key: string]: any }[]>(value);
+  const [data, setData] = useState<{ [key: string]: unknown }[]>(value);
 
-  const addPanel = () => setData((prev) => [...prev, {}]);
+  const addPanel = () => {
+    const newData = field === "seg" ? { segments: [] } : {};
+    setData((prev) => [...prev, newData]);
+  };
 
   useEffect(() => {
-    updateParent(data);
-  }, [data]);
+    if (JSON.stringify(data) !== JSON.stringify(value)) {
+      updateParent(data);
+    }
+  }, [data, updateParent, value]);
 
   return (
     <>
@@ -68,63 +78,145 @@ function PanelList({
           width: "100%",
           gridTemplateColumns: {
             xs: "1fr",
-            sm: "repeat(2, 1fr)",
           },
         }}
       >
-        {data.map((d, i) => {
-          const updateData = (value: any) => {
-            setData((existing) => {
-              const copy = [...existing];
-              copy[i] = value;
-              return copy;
-            });
-          };
+        {field === "seg"
+          ? value.map((d, i) => {
+              const updateData = (value: { [key: string]: unknown }) => {
+                setData((prev) => {
+                  const copy = [...prev];
+                  copy[i] = value;
+                  return copy;
+                });
+              };
 
-          return (
-            <Paper
-              key={i}
-              elevation={3}
-              sx={{
-                p: 2,
-                position: "relative",
-              }}
-            >
-              {!readOnly && (
-                <IconButton
-                  size="small"
-                  sx={{
-                    position: "absolute",
-                    top: 4,
-                    right: 4,
-                    zIndex: 1000,
-                    color: "text.secondary",
-                    "&:hover": {
-                      color: "error.main",
-                      backgroundColor: "transparent",
+              const copySelf = (copiedData: { [key: string]: unknown }) => {
+                setData((prev) => {
+                  return [
+                    ...prev,
+                    {
+                      ...Object.fromEntries(
+                        Object.entries(copiedData).filter(
+                          ([k, _]) => k !== "segments",
+                        ),
+                      ),
+                      segments: [],
                     },
+                  ];
+                });
+              };
+
+              return (
+                <Paper
+                  key={i}
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    position: "relative",
                   }}
-                  onClick={() =>
-                    setData((prev) => [...prev.filter((_, n) => n !== i)])
-                  }
                 >
-                  <CloseIcon />
-                </IconButton>
-              )}
-              <Panel
-                value={d}
-                schema={schema}
-                updateParent={updateData}
-                required={true}
-                omitTitle
-                readOnly={readOnly}
-                effects={effects}
-                palettes={palettes}
-                references={references}
-              />
-            </Paper>
-          );
-        })}
+                  {!readOnly && (
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        zIndex: 1000,
+                        color: "text.secondary",
+                        "&:hover": {
+                          color: "error.main",
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                      onClick={() =>
+                        setData((prev: { [key: string]: unknown }[]) =>
+                          prev.filter((_, n) => i !== n),
+                        )
+                      }
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  )}
+                  <SegmentPanel
+                    allSegments={data as unknown as VisualSegItem[]}
+                    value={d as unknown as VisualSegItem}
+                    schema={schema}
+                    updateParent={
+                      updateData as unknown as (d: VisualSegItem) => void
+                    }
+                    required={true}
+                    title={`${schema.title} ${i + 1}`}
+                    readOnly={readOnly}
+                    effects={effects}
+                    palettes={palettes}
+                    references={references}
+                    segments={segments}
+                    copySelf={copySelf}
+                  />
+                </Paper>
+              );
+            })
+          : data.map((d, i) => {
+              const updateData = (value: { [key: string]: unknown }) => {
+                setData((prev) => {
+                  const copy = [...prev];
+                  copy[i] = value;
+                  return copy;
+                });
+              };
+
+              const copySelf = (copiedData: { [key: string]: unknown }) => {
+                setData((prev) => [...prev, copiedData]);
+              };
+
+              return (
+                <Paper
+                  key={i}
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    position: "relative",
+                  }}
+                >
+                  {!readOnly && (
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        zIndex: 1000,
+                        color: "text.secondary",
+                        "&:hover": {
+                          color: "error.main",
+                          backgroundColor: "transparent",
+                        },
+                      }}
+                      onClick={() =>
+                        setData((prev) => [...prev.filter((_, n) => n !== i)])
+                      }
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  )}
+                  <Panel
+                    value={d as { [key: string]: unknown }}
+                    schema={schema}
+                    updateParent={updateData as (value: unknown) => void}
+                    required={true}
+                    title={`${schema.title} ${i + 1}`}
+                    readOnly={readOnly}
+                    effects={effects}
+                    palettes={palettes}
+                    references={references}
+                    segments={segments}
+                    copySelf={field === "elements" ? copySelf : undefined}
+                  />
+                </Paper>
+              );
+            })}
 
         <Paper
           elevation={3}
@@ -143,10 +235,7 @@ function PanelList({
               : {},
           }}
         >
-          <AddIcon
-            fontSize="large"
-            color={!readOnly ? "primary" : "disabled"}
-          />
+          <AddIcon fontSize="large" color={readOnly ? "disabled" : "primary"} />
         </Paper>
       </Box>
     </>

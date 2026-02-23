@@ -11,136 +11,28 @@ import {
 } from "@mui/material";
 import Field from "./Field.tsx";
 import PanelList from "./PanelList.tsx";
-import Colors from "./Colors.tsx";
-import {
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-  useEffect,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import EffectsOrPalettesSelect from "./EffectsOrPalettesSelect.tsx";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import type { Effects, Palettes } from "../../api.ts";
 import type { JSONSchema7 } from "json-schema";
-import type { SequenceListItem } from "../../types/api";
-import SequenceReference from "./SequenceReference.tsx";
+import type { Segment, SequenceListItem } from "../../types/api";
+import { getFieldOverride } from "./util.tsx";
 
-const getFieldOverride = (
-  fieldName: string,
-  value: any,
-  updateParent: (value: any) => void,
-  removeField: () => void,
-  schema: JSONSchema7,
-  readOnly: boolean,
-  effects: Effects[],
-  palettes: Palettes[],
-  references: SequenceListItem[],
-  effect: Effects | null,
-) => {
-  switch (fieldName) {
-    case "col":
-      return (
-        <Colors
-          value={value}
-          updateParent={updateParent}
-          removeSelf={removeField}
-          schema={schema}
-          readOnly={readOnly}
-          effect={effect}
-        />
-      );
-    case "fx":
-      return (
-        <EffectsOrPalettesSelect
-          value={value}
-          schema={schema}
-          updateParent={updateParent}
-          removeSelf={removeField}
-          readOnly={readOnly}
-          items={effects}
-          mode={"effects"}
-        />
-      );
-    case "pal":
-      return (
-        <EffectsOrPalettesSelect
-          value={value}
-          schema={schema}
-          updateParent={updateParent}
-          removeSelf={removeField}
-          readOnly={readOnly}
-          items={palettes}
-          mode={"palettes"}
-        />
-      );
-    case "$ref":
-      return (
-        <SequenceReference
-          value={value}
-          schema={schema}
-          references={references}
-          updateParent={updateParent}
-          removeSelf={removeField}
-          readOnly={readOnly}
-        />
-      );
-  }
-  return null;
-};
-
-const handleEffectChange = (
-  value: number,
-  effects: Effects[],
-  setEffect: Dispatch<SetStateAction<Effects | null>>,
-  setLabelOverrides: Dispatch<SetStateAction<{ [key: string]: string }>>,
-  setData: Dispatch<SetStateAction<{ [key: string]: any }>>,
-) => {
-  let superfluousFields = ["sx", "ix", "c1", "c2", "c3", "o1", "o2", "o3"];
-  const selectedEffect = effects.find((e) => e.id === value);
-  if (selectedEffect) {
-    setEffect(selectedEffect);
-    setLabelOverrides((prev) => {
-      const next = { ...prev };
-      for (const f of selectedEffect.fields) {
-        if (f.label !== "!") {
-          next[f.key] = f.label;
-        }
-      }
-      return next;
-    });
-    setData((prev) => {
-      const next = { ...prev };
-      for (const f of selectedEffect.fields) {
-        superfluousFields = superfluousFields.filter((k) => k !== f.key);
-        if (!(f.key in next)) {
-          next[f.key] = null;
-        }
-      }
-      if (selectedEffect.uses_palette && !("pal" in next)) {
-        next["pal"] = null;
-      } else if (!selectedEffect.uses_palette && "pal" in next) {
-        delete next["pal"];
-      }
-      for (const f of superfluousFields) {
-        delete next[f];
-      }
-      return next;
-    });
-  }
-};
-
-type PanelProps = {
-  value: { [key: string]: any };
+export type PanelProps = {
+  value: { [key: string]: unknown };
   schema: JSONSchema7;
-  updateParent: (value: any) => void;
+  updateParent: (value: unknown) => void;
   removeSelf?: () => void;
   omitTitle?: boolean;
+  title?: string;
   required: boolean;
   readOnly: boolean;
   effects: Effects[];
   palettes: Palettes[];
   references: SequenceListItem[];
+  segments: Segment[];
+  copySelf?: (value: { [key: string]: unknown }) => void;
 };
 
 function Panel({
@@ -149,36 +41,29 @@ function Panel({
   updateParent,
   removeSelf,
   omitTitle,
+  title,
   required,
   readOnly,
   effects,
   palettes,
   references,
+  segments,
+  copySelf,
 }: PanelProps) {
-  const [effect, setEffect] = useState<Effects | null>(null);
-  const [labelOverrides, setLabelOverrides] = useState<{
-    [key: string]: string;
-  }>({});
   const requiredFields: string[] = schema?.required || [];
-  const [data, setData] = useState<{ [key: string]: any }>(
+  const [data, setData] = useState<{ [key: string]: unknown }>(
     value || Object.fromEntries(requiredFields.map((f) => [f, null])),
   );
   const [availableFields, setAvailableFields] = useState<string[]>([]);
 
-  const makeField = (key: string, value: any): ReactNode => {
+  const makeField = (
+    key: string,
+    value: unknown | { [key: string]: unknown },
+  ): ReactNode => {
     const fieldSchema = schema?.properties?.[key] as JSONSchema7;
 
-    const updateData = (value: any) => {
+    const updateData = (value: unknown) => {
       setData((prev) => ({ ...prev, [key]: value }));
-      if (key === "fx") {
-        handleEffectChange(
-          value,
-          effects,
-          setEffect,
-          setLabelOverrides,
-          setData,
-        );
-      }
     };
 
     const removeField = () => {
@@ -197,7 +82,7 @@ function Panel({
       effects,
       palettes,
       references,
-      effect,
+      null,
     );
 
     if (override) {
@@ -206,7 +91,7 @@ function Panel({
       return (
         <Panel
           key={key}
-          value={value}
+          value={value as { [key: string]: unknown }}
           schema={fieldSchema}
           updateParent={updateData}
           removeSelf={removeField}
@@ -215,6 +100,7 @@ function Panel({
           effects={effects}
           palettes={palettes}
           references={references}
+          segments={segments}
         />
       );
     } else if (
@@ -226,6 +112,7 @@ function Panel({
       return (
         <PanelList
           key={key}
+          field={key}
           value={value instanceof Array ? value : []}
           schema={fieldSchema.items}
           updateParent={updateData}
@@ -235,6 +122,7 @@ function Panel({
           effects={effects}
           palettes={palettes}
           references={references}
+          segments={segments}
         />
       );
     } else {
@@ -247,7 +135,6 @@ function Panel({
           removeSelf={removeField}
           required={requiredFields.includes(key)}
           readOnly={readOnly}
-          labelOverride={labelOverrides[key]}
         />
       );
     }
@@ -262,38 +149,25 @@ function Panel({
       for (const f of selected) next[f] = null;
       return next;
     });
-    if (selected.includes("fx")) {
-      handleEffectChange(0, effects, setEffect, setLabelOverrides, setData);
-    }
   };
 
   useEffect(() => {
-    updateParent(data);
-  }, [data]);
+    if (JSON.stringify(data) !== JSON.stringify(value)) {
+      updateParent(data);
+    }
+  }, [data, updateParent, value]);
 
   useEffect(() => {
     setAvailableFields(
       Object.keys(schema.properties || {}).filter((f) => !(f in data)),
     );
-  }, [schema, requiredFields]);
-
-  useEffect(() => {
-    if (data?.fx && effects.length) {
-      handleEffectChange(
-        data.fx,
-        effects,
-        setEffect,
-        setLabelOverrides,
-        setData,
-      );
-    }
-  }, [data?.fx, effects]);
+  }, [schema, requiredFields, data]);
 
   useEffect(() => {
     setAvailableFields((_) =>
       Object.keys(schema?.properties || {}).filter((f) => !(f in data)),
     );
-  }, [data]);
+  }, [data, schema?.properties]);
 
   return (
     <Box
@@ -312,9 +186,23 @@ function Panel({
           gap={2}
         >
           <Typography variant="h6" sx={{ mb: 0 }}>
-            {omitTitle === true ? "" : schema.title}
+            {omitTitle === true ? "" : title || schema.title}
           </Typography>
-
+          {copySelf && (
+            <IconButton
+              size="small"
+              sx={{
+                color: "text.secondary",
+                "&:hover": {
+                  color: "error.main",
+                  backgroundColor: "transparent",
+                },
+              }}
+              onClick={() => copySelf(data)}
+            >
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          )}
           {!required && !readOnly && (
             <IconButton
               size="small"

@@ -1,3 +1,3 @@
-db_url = "sqlite:///wled_seq.db"
-mqtt_url = "mqtt://localhost"
+db_url = "postgresql://postgres:postgres@horde.home:39344/wled_seq"
+mqtt_url = "localhost"
 api_url = "http://localhost:8080"

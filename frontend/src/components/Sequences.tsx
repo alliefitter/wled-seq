@@ -14,6 +14,7 @@ import type { SequenceListItem } from "../types/api";
 import { useNavigate } from "react-router-dom";
 
 function SequenceGrid() {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<SequenceListItem[]>([]);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -44,7 +45,11 @@ function SequenceGrid() {
     : columns;
 
   useEffect(() => {
-    listSequences().then((sequences) => setRows(sequences));
+    setIsLoading(true);
+    listSequences().then((sequences) => {
+      setRows(sequences);
+      setIsLoading(false);
+    });
   }, [listSequences(), setRows]);
   return (
     <Box sx={{ padding: "10px" }}>
@@ -60,6 +65,7 @@ function SequenceGrid() {
       </Toolbar>
       <DataGrid
         columns={visibleColumns}
+        loading={isLoading}
         rows={rows}
         disableRowSelectionOnClick
         onRowClick={(params) => navigate(`/sequences/${params.id}`)}

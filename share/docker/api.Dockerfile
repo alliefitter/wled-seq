@@ -16,7 +16,7 @@ ENV \
 ARG POETRY_VERSION=2.1.2
 
 RUN apt-get update && \
-    apt-get install -y curl build-essential && \
+    apt-get install -y curl build-essential libpq-dev && \
     curl -sSL https://install.python-poetry.org | python -
 
 WORKDIR /app
@@ -55,11 +55,15 @@ ENV \
 
 WORKDIR /app
 
-
 COPY --from=builder /app .
 
 # Create the app user and group
 RUN groupadd --gid 1000 app && \
   useradd --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin --uid 1000 --gid 1000 app
+
+RUN apt-get update && \
+    apt-get install -y libpq5
+
+USER app
 
 ENTRYPOINT ["uvicorn"]

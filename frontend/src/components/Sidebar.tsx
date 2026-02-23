@@ -2,6 +2,8 @@ import { Box } from "@mui/material";
 import AnimationIcon from "@mui/icons-material/Animation";
 import EditIcon from "@mui/icons-material/Edit";
 import LightbulbCircleIcon from "@mui/icons-material/LightbulbCircle";
+import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
+import SegmentIcon from "@mui/icons-material/Segment";
 import { Menu } from "./Menu";
 
 type Props = { expanded: boolean };
@@ -10,7 +12,9 @@ const SideBar = ({ expanded }: Props) => {
   const menuItems = [
     { path: "/editor", title: "Editor", icon: <EditIcon /> },
     { path: "/sequences", title: "Sequences", icon: <AnimationIcon /> },
+    { path: "/playlists", title: "Playlists", icon: <PlaylistPlayIcon /> },
     { path: "/wled-hosts", title: "WLED Hosts", icon: <LightbulbCircleIcon /> },
+    { path: "/segmentSets", title: "Segment Sets", icon: <SegmentIcon /> },
   ];
 
   return (

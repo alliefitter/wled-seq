@@ -1,8 +1,12 @@
 import type {
   CreateResponse,
   LedSequence,
+  PlaylistResponse,
+  Segment,
+  SegmentSetResponse,
   SequenceListItem,
   SequenceResponse,
+  Track,
   WledHostResponse,
 } from "./types/api";
 import { getConfig } from "./config.ts";
@@ -23,6 +27,20 @@ export const listWledHosts = async (): Promise<WledHostResponse[]> => {
   });
   await handleError(response);
   return response.json();
+};
+
+export const stopWledHost = async (hostId: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/wled-host/${hostId}/stop`, {
+    method: "POST",
+  });
+  await handleError(response);
+};
+
+export const powerOffWledHost = async (hostId: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/wled-host/${hostId}/power-off`, {
+    method: "POST",
+  });
+  await handleError(response);
 };
 
 export const listSequences = async (
@@ -79,6 +97,7 @@ export const executeRandom = async (hostId: string, sleep_time: number) => {
 
 export const createSequence = async (
   hostId: string,
+  segmentSetId: string,
   name: string,
   sequence: LedSequence,
 ): Promise<CreateResponse> => {
@@ -90,6 +109,7 @@ export const createSequence = async (
     body: JSON.stringify({
       host_id: hostId,
       name: name,
+      segment_set_id: segmentSetId,
       sequence: sequence,
     }),
   });
@@ -101,6 +121,7 @@ export const createSequence = async (
 export const updateSequence = async (
   id: string,
   hostId: string,
+  segmentSetId: string,
   name: string,
   sequence: LedSequence,
 ): Promise<void> => {
@@ -111,6 +132,7 @@ export const updateSequence = async (
     },
     body: JSON.stringify({
       host_id: hostId,
+      segment_set_id: segmentSetId,
       name: name,
       sequence: sequence,
     }),
@@ -127,6 +149,111 @@ export const getSequence = async (id: string): Promise<SequenceResponse> => {
 
 export const deleteSequence = async (id: string): Promise<void> => {
   const response = await fetch(`${API_URL}/sequence/${id}`, {
+    method: "delete",
+  });
+  await handleError(response);
+};
+
+export const createPlaylist = async (
+  name: string,
+  repeat: boolean,
+  shuffle: boolean,
+  trackTime: number | null,
+  tracks: Track[],
+): Promise<CreateResponse> => {
+  const response = await fetch(`${API_URL}/playlist`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: name,
+      repeat: repeat,
+      shuffle: shuffle,
+      track_time: trackTime,
+      tracks: tracks,
+    }),
+  });
+  await handleError(response);
+
+  return response.json();
+};
+
+export const updatePlaylist = async (
+  id: string,
+  name: string,
+  repeat: boolean,
+  shuffle: boolean,
+  trackTime: number | null,
+  tracks: Track[],
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/playlist/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: name,
+      repeat: repeat,
+      shuffle: shuffle,
+      track_time: trackTime,
+      tracks: tracks,
+    }),
+  });
+  await handleError(response);
+};
+
+export const executePlaylistId = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/playlist/${id}/execute`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  await handleError(response);
+};
+
+export const executePlaylist = async (
+  name: string,
+  repeat: boolean,
+  shuffle: boolean,
+  trackTime: number | null,
+  tracks: Track[],
+): Promise<CreateResponse> => {
+  const response = await fetch(`${API_URL}/executePlaylist`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: name,
+      repeat: repeat,
+      shuffle: shuffle,
+      track_time: trackTime,
+      tracks: tracks,
+    }),
+  });
+  await handleError(response);
+
+  return response.json();
+};
+
+export const getPlaylist = async (id: string): Promise<PlaylistResponse> => {
+  const response = await fetch(`${API_URL}/playlist/${id}`);
+  await handleError(response);
+
+  return response.json();
+};
+
+export const listPlaylists = async (): Promise<PlaylistResponse[]> => {
+  const response = await fetch(`${API_URL}/playlist`);
+  await handleError(response);
+
+  return response.json();
+};
+
+export const deletePlaylist = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/playlist/${id}`, {
     method: "delete",
   });
   await handleError(response);
@@ -167,6 +294,79 @@ export const updateWledHost = async (
 
 export const deleteWledHost = async (id: string): Promise<void> => {
   const response = await fetch(`${API_URL}/wled-host/${id}`, {
+    method: "delete",
+  });
+  await handleError(response);
+};
+
+export const getSegmentSet = async (
+  id: string,
+): Promise<SegmentSetResponse> => {
+  const response = await fetch(`${API_URL}/segment-set/${id}`);
+  await handleError(response);
+
+  return response.json();
+};
+
+export const listSegmentSets = async (): Promise<SegmentSetResponse[]> => {
+  const response = await fetch(`${API_URL}/segment-set`);
+  await handleError(response);
+
+  return response.json();
+};
+
+export const listWledHostSegmentSets = async (
+  hostId: string,
+): Promise<SegmentSetResponse[]> => {
+  const response = await fetch(`${API_URL}/wled-host/${hostId}/segment-set`);
+  await handleError(response);
+
+  return response.json();
+};
+
+export const createSegmentSet = async (
+  name: string,
+  hostId: string,
+  segments: Segment[],
+): Promise<CreateResponse> => {
+  const response = await fetch(`${API_URL}/segment-set`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      host_id: hostId,
+      segments,
+    }),
+  });
+  await handleError(response);
+
+  return response.json();
+};
+
+export const updateSegmentSet = async (
+  id: string,
+  name: string,
+  hostId: string,
+  segments: Segment[],
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/segment-set/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      host_id: hostId,
+      segments,
+    }),
+  });
+  await handleError(response);
+};
+
+export const deleteSegmentSet = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/segment-set/${id}`, {
     method: "delete",
   });
   await handleError(response);

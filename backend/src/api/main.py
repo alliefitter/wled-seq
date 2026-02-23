@@ -5,30 +5,35 @@ from uuid import UUID
 from aiomqtt import Client
 from fastapi import FastAPI, HTTPException
 from fastapi.params import Depends, Query
-from httpx import AsyncClient
 from pydantic import AnyUrl
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 
 from api.orm import (
-    Sequence,
-    WledHost,
+    PlaylistOrm,
+    SegmentSetOrm,
+    SequenceOrm,
+    WledHostOrm,
     db_session_middleware,
     get_db,
 )
+from api.router import wled_host
 from lib.model.api import (
     CreateResponse,
-    EffectField,
-    EffectsItem,
-    ExecuteRandomRequest,
     ExecuteSequenceRequest,
+    PlaylistRequest,
+    PlaylistResponse,
+    SegmentSetRequest,
+    SegmentSetResponse,
     SequenceListItem,
     SequenceRequest,
     SequenceResponse,
-    WledHostRequest,
-    WledHostResponse,
 )
-from lib.model.sequence import LedSequence, RandomSequenceMessage, SequenceMessage
+from lib.model.sequence import (
+    PlaylistMessage,
+    SequenceMessage,
+)
+from lib.prepare import prepare
 from lib.settings import get_settings
 
 logger = getLogger(__name__)
@@ -44,202 +49,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.middleware("http")(db_session_middleware)
-
-
-@app.post("/wled-host")
-async def create_host(
-    body: WledHostRequest, db: Annotated[Session, Depends(get_db)]
-) -> CreateResponse:
-    existing_host = db.query(WledHost).filter_by(url=str(body.url)).one_or_none()
-    if existing_host:
-        raise HTTPException(409, f"Host {body.url} already exists")
-
-    host = WledHost(url=str(body.url))
-    db.add(host)
-    db.flush()
-    db.commit()
-
-    return CreateResponse(id=host.id)
-
-
-@app.put("/wled-host/{host_id}")
-async def update_host(
-    host_id: UUID, body: WledHostRequest, db: Annotated[Session, Depends(get_db)]
-) -> None:
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    host.url = str(body.url)
-    db.commit()
-
-
-@app.delete("/wled-host/{host_id}")
-async def delete_host(host_id: UUID, db: Annotated[Session, Depends(get_db)]) -> None:
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    db.delete(host)
-    db.commit()
-
-
-@app.get("/wled-host/{host_id}/sequence")
-async def list_host_sequences(
-    host_id: UUID, db: Annotated[Session, Depends(get_db)]
-) -> list[SequenceListItem]:
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    return [
-        SequenceListItem(
-            id=s.id,
-            host_id=s.host_id,
-            host=s.host.url,
-            name=str(s.name),
-        )
-        for s in host.sequences
-    ]
-
-
-@app.post("/wled-host/{host_id}/execute-random")
-async def execute_random(
-    host_id: UUID, body: ExecuteRandomRequest, db: Annotated[Session, Depends(get_db)]
-):
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    async with Client(settings.mqtt_url) as client:
-        await client.publish(
-            "wled-seq/random",
-            payload=RandomSequenceMessage(
-                base_url=settings.api_url,
-                sleep_time=body.sleep_time,
-                host=AnyUrl(host.url),
-                host_id=host_id,
-            ).model_dump_json(exclude_unset=True),
-        )
-
-
-@app.get("/wled-host")
-async def list_hosts(db: Annotated[Session, Depends(get_db)]) -> list[WledHostResponse]:
-    hosts = db.query(WledHost).all()
-    return [WledHostResponse.model_validate(h, from_attributes=True) for h in hosts]
-
-
-async def get_wled_data(host: WledHost, field_name: str) -> list[str]:
-    async with AsyncClient(base_url=host.url) as client:
-        response = await client.get(f"/json/{field_name}")
-        if response.is_error:
-            logger.error(
-                f"Error retrieving {field_name} list for {host.id}",
-                extra={"status_code": response.status_code, "text": response.text},
-            )
-        logger.info(response.json())
-        return response.json()
-
-
-@app.get("/wled-host/{host_id}/effects")
-async def get_host_effects(
-    host_id: UUID, db: Annotated[Session, Depends(get_db)]
-) -> list[EffectsItem]:
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    async with AsyncClient(base_url=host.url) as client:
-        response = await client.get("/json/effects")
-        if response.is_error:
-            logger.error(
-                f"Error retrieving effects list for {host.id}",
-                extra={"status_code": response.status_code, "text": response.text},
-            )
-
-        effects = response.json()
-        response = await client.get("/json/fxdata")
-        if response.is_error:
-            logger.error(
-                f"Error retrieving effects list for {host.id}",
-                extra={"status_code": response.status_code, "text": response.text},
-            )
-
-        fx_data = response.json()
-        processed_effects = []
-        for i, effect in enumerate(effects):
-            if effect.lower() == "rainbow":
-                print("foo")
-            processed_effect = EffectsItem(
-                id=i, value=effect, fields=[], uses_palette=True, colors=["Primary"]
-            )
-            fx_iter = iter(fx_data[i].split(";"))
-            try:
-                fields = next(fx_iter).split(",")
-                keys = ["sx", "ix", "c1", "c2", "c3", "o1", "o2", "o3"]
-                for n, field in enumerate(fields):
-                    if len(field) == 0:
-                        continue
-
-                    processed_effect.fields.append(
-                        EffectField(
-                            key=keys[n],
-                            label=field,
-                        )
-                    )
-
-                colors = next(fx_iter).split(",")
-                default_labels = ["Primary", "Secondary", "Tertiary"]
-                if len(colors) > 0 and colors[0] != "":
-                    processed_effect.colors = []
-                    for n, color in enumerate(colors):
-                        if len(color) == 0:
-                            break
-                        processed_effect.colors.append(
-                            default_labels[n] if color == "!" else color
-                        )
-
-                palette = next(fx_iter)
-                processed_effect.uses_palette = palette == "!"
-
-            except StopIteration:
-                pass
-
-            finally:
-                processed_effects.append(processed_effect)
-
-    return processed_effects
-
-
-@app.get("/wled-host/{host_id}/palettes")
-async def get_host_palettes(
-    host_id: UUID, db: Annotated[Session, Depends(get_db)]
-) -> list[str]:
-    host = db.query(WledHost).filter_by(id=host_id).one_or_none()
-    if not host:
-        raise HTTPException(404, f"Host {host_id} does not exist")
-
-    async with AsyncClient(base_url=host.url) as client:
-        response = await client.get("/json/palettes")
-        if response.is_error:
-            logger.error(
-                f"Error retrieving palettes list for {host.id}",
-                extra={"status_code": response.status_code, "text": response.text},
-            )
-
-        return response.json()
+app.include_router(wled_host.router)
 
 
 @app.post("/sequence")
 async def create_sequence(
     body: SequenceRequest, db: Annotated[Session, Depends(get_db)]
 ) -> CreateResponse:
-    host = db.query(WledHost).filter_by(id=body.host_id).one_or_none()
+    host = db.query(WledHostOrm).filter_by(id=body.host_id).one_or_none()
     if not host:
         raise HTTPException(404, f"Host {body.host_id} does not exist")
-    sequence = Sequence(
+
+    existing_sequence = (
+        db.query(SequenceOrm).filter_by(host_id=body.host_id, name=body.name).one_or_none()
+    )
+    if existing_sequence:
+        raise HTTPException(409, f"Sequence with name {body.name} already exists for host")
+
+    sequence = SequenceOrm(
         name=body.name,
         host_id=body.host_id,
+        segment_set_id=body.segment_set_id,
         sequence=body.sequence,
     )
     db.add(sequence)
@@ -253,14 +83,17 @@ async def list_sequences(
     db: Annotated[Session, Depends(get_db)],
     host_id: Annotated[UUID | None, Query(alias="hostId")] = None,
 ) -> list[SequenceListItem]:
-    query = db.query(Sequence)
+    query = db.query(SequenceOrm).join(WledHostOrm)
     if host_id:
-        query = query.filter_by(host_id=host_id)
+        query = query.filter_by(id=host_id)
+
+    query = query.order_by(WledHostOrm.url, SequenceOrm.name)
     return [
         SequenceListItem(
             id=s.id,
             host_id=s.host_id,
             host=s.host.url,
+            segment_set_id=s.segment_set_id,
             name=str(s.name),
         )
         for s in query.all()
@@ -271,21 +104,20 @@ async def list_sequences(
 async def update_sequence(
     sequence_id: UUID, body: SequenceRequest, db: Annotated[Session, Depends(get_db)]
 ) -> None:
-    sequence = db.query(Sequence).filter_by(id=sequence_id).one_or_none()
+    sequence = db.query(SequenceOrm).filter_by(id=sequence_id).one_or_none()
     if not sequence:
         raise HTTPException(404, f"Sequence {sequence_id} does not exist")
 
     sequence.name = body.name
     sequence.host_id = body.host_id
     sequence.sequence = body.sequence
+    sequence.segment_set_id = body.segment_set_id
     db.commit()
 
 
 @app.delete("/sequence/{sequence_id}")
-async def delete_sequence(
-    sequence_id: UUID, db: Annotated[Session, Depends(get_db)]
-) -> None:
-    sequence = db.query(Sequence).filter_by(id=sequence_id).one_or_none()
+async def delete_sequence(sequence_id: UUID, db: Annotated[Session, Depends(get_db)]) -> None:
+    sequence = db.query(SequenceOrm).filter_by(id=sequence_id).one_or_none()
     if not sequence:
         raise HTTPException(404, f"Sequence {sequence_id} does not exist")
 
@@ -297,7 +129,7 @@ async def delete_sequence(
 async def get_sequence(
     sequence_id: UUID, db: Annotated[Session, Depends(get_db)]
 ) -> SequenceResponse:
-    sequence = db.query(Sequence).filter_by(id=sequence_id).one_or_none()
+    sequence = db.query(SequenceOrm).filter_by(id=sequence_id).one_or_none()
     if not sequence:
         raise HTTPException(404, "sequence not found")
 
@@ -305,32 +137,204 @@ async def get_sequence(
         id=sequence.id,
         host_id=sequence.host_id,
         host=sequence.host.url,
+        segment_set_id=sequence.segment_set_id,
         name=sequence.name,
         sequence=sequence.sequence,
     )
 
 
-def _prepare(led_sequence: LedSequence, db: Session) -> LedSequence:
-    sequence_elements = []
-    for element in led_sequence.elements:
-        if element.ref:
-            referenced_sequence = (
-                db.query(Sequence).filter_by(id=element.ref).one_or_none()
-            )
-            if not referenced_sequence:
-                raise HTTPException(500, "referenced sequence not found")
+@app.post("/playlist")
+async def create_playlist(
+    body: PlaylistRequest, db: Annotated[Session, Depends(get_db)]
+) -> CreateResponse:
+    existing_playlist = db.query(PlaylistOrm).filter_by(name=body.name).one_or_none()
+    if existing_playlist:
+        raise HTTPException(409, f"Playlist with name {body.name} already exists")
 
-            sequence_elements += referenced_sequence.sequence.elements
+    playlist = PlaylistOrm(
+        name=body.name,
+        repeat=body.repeat,
+        shuffle=body.shuffle,
+        track_time=body.track_time,
+        tracks=body.tracks,
+    )
+    db.add(playlist)
+    db.commit()
 
-        else:
-            sequence_elements.append(element)
-
-    led_sequence.elements = sequence_elements
-
-    return led_sequence
+    return CreateResponse(id=playlist.id)
 
 
-async def _execute(sequence: Sequence | None, db: Session):
+@app.put("/playlist/{playlist_id}", status_code=204)
+async def update_playlist(
+    playlist_id: UUID, body: PlaylistRequest, db: Annotated[Session, Depends(get_db)]
+) -> None:
+    playlist = db.query(PlaylistOrm).filter_by(id=playlist_id).one_or_none()
+    if not playlist:
+        raise HTTPException(404, "playlist not found")
+
+    playlist.name = body.name
+    playlist.repeat = body.repeat
+    playlist.shuffle = body.shuffle
+    playlist.track_time = body.track_time
+    playlist.tracks = body.tracks
+    db.commit()
+
+
+@app.delete("/playlist/{playlist_id}", status_code=204)
+async def delete_playlist(playlist_id: UUID, db: Annotated[Session, Depends(get_db)]) -> None:
+    playlist = db.query(PlaylistOrm).filter_by(id=playlist_id).one_or_none()
+    if not playlist:
+        raise HTTPException(404, "playlist not found")
+
+    db.delete(playlist)
+    db.commit()
+
+
+@app.post("/playlist/{playlist_id}/execute", status_code=204)
+async def execute_playlist_by_id(
+    playlist_id: UUID, db: Annotated[Session, Depends(get_db)]
+) -> None:
+    playlist = db.query(PlaylistOrm).filter_by(id=playlist_id).one_or_none()
+    if not playlist:
+        raise HTTPException(404, "playlist not found")
+
+    async with Client(settings.mqtt_url) as client:
+        await client.publish(
+            "wled-seq/playlist",
+            payload=PlaylistMessage(
+                base_url=settings.api_url,
+                name=playlist.name,
+                repeat=playlist.repeat,
+                shuffle=playlist.shuffle,
+                track_time=playlist.track_time,
+                tracks=playlist.tracks,
+            ).model_dump_json(exclude_unset=True),
+        )
+
+
+@app.get("/playlist/{playlist_id}", status_code=200)
+async def get_playlist(
+    playlist_id: UUID, db: Annotated[Session, Depends(get_db)]
+) -> PlaylistResponse:
+    playlist = db.query(PlaylistOrm).filter_by(id=playlist_id).one_or_none()
+    if not playlist:
+        raise HTTPException(404, "playlist not found")
+
+    return PlaylistResponse(
+        id=playlist.id,
+        name=playlist.name,
+        repeat=playlist.repeat,
+        shuffle=playlist.shuffle,
+        track_time=playlist.track_time,
+        tracks=playlist.tracks,
+    )
+
+
+@app.get("/playlist", status_code=200)
+async def list_playlists(
+    db: Annotated[Session, Depends(get_db)],
+) -> list[PlaylistResponse]:
+    playlists = db.query(PlaylistOrm).all()
+
+    return [
+        PlaylistResponse(
+            id=p.id,
+            repeat=p.repeat,
+            name=p.name,
+            shuffle=p.shuffle,
+            track_time=p.track_time,
+            tracks=p.tracks,
+        )
+        for p in playlists
+    ]
+
+
+@app.post("/segment-set")
+async def create_segment_set(
+    body: SegmentSetRequest, db: Annotated[Session, Depends(get_db)]
+) -> CreateResponse:
+    existing_segment_set = (
+        db.query(SegmentSetOrm).filter_by(name=body.name, host_id=body.host_id).one_or_none()
+    )
+    if existing_segment_set:
+        raise HTTPException(409, f"Segment set with name {body.name} already exists")
+
+    segment_set = SegmentSetOrm(host_id=body.host_id, name=body.name, segments=body.segments)
+    db.add(segment_set)
+    db.flush()
+
+    db.commit()
+
+    return CreateResponse(id=segment_set.id)
+
+
+@app.put("/segment-set/{segment_set_id}")
+async def update_segment_set(
+    segment_set_id: UUID,
+    body: SegmentSetRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> CreateResponse:
+    segment_set = db.query(SegmentSetOrm).filter_by(id=segment_set_id).one_or_none()
+    if not segment_set:
+        raise HTTPException(409, f"Segment set {segment_set} does not exist.")
+
+    segment_set.host_id = body.host_id
+    segment_set.name = body.name
+    segment_set.segments = body.segments
+    db.add(segment_set)
+    db.flush()
+
+    db.commit()
+
+    return CreateResponse(id=segment_set.id)
+
+
+@app.delete("/segment-set/{segment_set_id}", status_code=204)
+async def delete_segment_set(segment_set_id: UUID, db: Annotated[Session, Depends(get_db)]) -> None:
+    segment_set = db.query(SegmentSetOrm).filter_by(id=segment_set_id).one_or_none()
+    if not segment_set:
+        raise HTTPException(404, "Segment set not found")
+
+    db.delete(segment_set)
+    db.commit()
+
+
+@app.get("/segment-set/{segment_set_id}", status_code=200)
+async def get_segment_set(
+    segment_set_id: UUID, db: Annotated[Session, Depends(get_db)]
+) -> SegmentSetResponse:
+    segment_set = db.query(SegmentSetOrm).filter_by(id=segment_set_id).one_or_none()
+    if not segment_set:
+        raise HTTPException(404, "segment_set not found")
+
+    return SegmentSetResponse(
+        id=segment_set.id,
+        name=segment_set.name,
+        host_id=segment_set.host_id,
+        host=segment_set.host.url,
+        segments=segment_set.segments,
+    )
+
+
+@app.get("/segment-set", status_code=200)
+async def list_segment_sets(
+    db: Annotated[Session, Depends(get_db)],
+) -> list[SegmentSetResponse]:
+    segment_sets = db.query(SegmentSetOrm).all()
+
+    return [
+        SegmentSetResponse(
+            id=s.id,
+            name=s.name,
+            host_id=s.host_id,
+            host=s.host.url,
+            segments=s.segments,
+        )
+        for s in segment_sets
+    ]
+
+
+async def _execute(sequence: SequenceOrm | None):
     if not sequence:
         raise HTTPException(404, "sequence not found")
 
@@ -339,33 +343,51 @@ async def _execute(sequence: Sequence | None, db: Session):
             "wled-seq/execute",
             payload=SequenceMessage(
                 name=sequence.name,
-                sequence=_prepare(sequence.sequence, db),
+                sequence=await prepare(sequence.sequence, settings.api_url),
                 host=sequence.host.url,
+                segment_set_id=sequence.segment_set_id,
             ).model_dump_json(exclude_unset=True),
         )
 
 
 @app.post("/execute/by-id/{sequence_id}")
 async def execute_by_id(sequence_id: UUID, db: Annotated[Session, Depends(get_db)]):
-    await _execute(db.query(Sequence).filter_by(id=sequence_id).one_or_none(), db)
+    await _execute(db.query(SequenceOrm).filter_by(id=sequence_id).one_or_none())
 
 
 @app.post("/execute/by-name/{name}")
 async def execute_by_name(name: str, db: Annotated[Session, Depends(get_db)]):
-    await _execute(db.query(Sequence).filter_by(name=name).one_or_none(), db)
+    await _execute(db.query(SequenceOrm).filter_by(name=name).one_or_none())
 
 
 @app.post("/execute")
-async def execute(
-    body: ExecuteSequenceRequest, db: Annotated[Session, Depends(get_db)]
-):
-    host = db.query(WledHost).filter_by(id=body.host_id).one_or_none()
+async def execute(body: ExecuteSequenceRequest, db: Annotated[Session, Depends(get_db)]):
+    host = db.query(WledHostOrm).filter_by(id=body.host_id).one_or_none()
     if not host:
         raise HTTPException(404, "host not found")
     async with Client(settings.mqtt_url) as client:
         await client.publish(
             "wled-seq/execute",
             payload=SequenceMessage(
-                name="Test", sequence=_prepare(body.sequence, db), host=AnyUrl(host.url)
+                name="Test",
+                sequence=await prepare(body.sequence, settings.api_url),
+                host=AnyUrl(host.url),
+                segment_set_id=None,
+            ).model_dump_json(exclude_unset=True),
+        )
+
+
+@app.post("/executePlaylist")
+async def execute_playlist(body: PlaylistRequest):
+    async with Client(settings.mqtt_url) as client:
+        await client.publish(
+            "wled-seq/playlist",
+            payload=PlaylistMessage(
+                base_url=settings.api_url,
+                name=body.name,
+                repeat=body.repeat,
+                shuffle=body.shuffle,
+                track_time=body.track_time,
+                tracks=body.tracks,
             ).model_dump_json(exclude_unset=True),
         )

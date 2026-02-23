@@ -1,6 +1,6 @@
-import { useState, useEffect, type ChangeEvent } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { Box, TextField } from "@mui/material";
-import { hexToRgb } from "./util.ts";
+import { hexToRgb } from "./util.tsx";
 
 type RgbwTextFieldProps = {
   value?: number[] | string;
@@ -54,7 +54,7 @@ function RgbwTextField({ value = [], onChange, readOnly }: RgbwTextFieldProps) {
   }, [inputValue]);
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <TextField
         value={inputValue}
         onChange={handleChange}

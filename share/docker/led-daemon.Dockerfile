@@ -16,7 +16,7 @@ ENV \
 ARG POETRY_VERSION=2.1.2
 
 RUN apt-get update && \
-    apt-get install -y curl build-essential && \
+    apt-get install -y curl build-essential libpq-dev && \
     curl -sSL https://install.python-poetry.org | python -
 
 WORKDIR /app
@@ -30,6 +30,8 @@ COPY ./pyproject.toml ./poetry.lock ./
 
 RUN poetry install --no-root --only main
 
+COPY ./.alembic ./.alembic
+COPY ./alembic.ini .
 COPY ./src .
 COPY ./default.toml .
 COPY ./logging.yaml .
@@ -43,11 +45,15 @@ ENV \
   PYTHONUNBUFFERED=1 \
   # Dump tracebacks when non-python code crashes, useful for diagnosing issues
   PYTHONFAULTHANDLER=1 \
+  UVICORN_HOST=0.0.0.0 \
+  UVICORN_PORT=8000 \
+  UVICORN_APP=api.main:app \
+  # Trust proxy headers such as `X-Forwarded-For`, the default is to only trust headers from 127.0.0.1
+  FORWARDED_ALLOW_IPS="*" \
   # Add the app venv to $PATH
   PATH="/app/.venv/bin:${PATH}"
 
 WORKDIR /app
-
 
 COPY --from=builder /app .
 
@@ -55,5 +61,10 @@ COPY --from=builder /app .
 RUN groupadd --gid 1000 app && \
   useradd --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin --uid 1000 --gid 1000 app
 
+
+RUN apt-get update && \
+    apt-get install -y libpq5
+
+USER app
+
 ENTRYPOINT ["python", "-m", "led_daemon"]
-#ENTRYPOINT ["ls", "-lah"]

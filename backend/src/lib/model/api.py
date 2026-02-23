@@ -1,6 +1,6 @@
 from pydantic import UUID4, AnyUrl, BaseModel
 
-from lib.model.sequence import LedSequence
+from lib.model.sequence import LedSequence, Track
 
 
 class WledHostRequest(BaseModel):
@@ -10,10 +10,12 @@ class WledHostRequest(BaseModel):
 class WledHostResponse(BaseModel):
     id: UUID4
     url: AnyUrl
+    segment_sets: list["SegmentSetResponse"]
 
 
 class SequenceRequest(BaseModel):
     host_id: UUID4
+    segment_set_id: UUID4
     name: str
     sequence: LedSequence
 
@@ -22,6 +24,7 @@ class SequenceResponse(BaseModel):
     id: UUID4
     host_id: UUID4
     host: AnyUrl
+    segment_set_id: UUID4
     name: str
     sequence: LedSequence
 
@@ -30,6 +33,7 @@ class SequenceListItem(BaseModel):
     id: UUID4
     host_id: UUID4
     host: AnyUrl
+    segment_set_id: UUID4
     name: str
 
 
@@ -59,26 +63,41 @@ class EffectsItem(BaseModel):
     colors: list[str]
 
 
-class CreatePlaylistEntry(BaseModel):
-    sequence_id: UUID4
+class PlaylistRequest(BaseModel):
     name: str
-    order: int
-
-
-class PlaylistEntry(CreatePlaylistEntry):
-    id: UUID4
-
-
-class CreatePlaylistRequest(BaseModel):
-    host_id: UUID4
-    name: str
+    repeat: bool
     shuffle: bool
-    entries: list[CreatePlaylistEntry]
+    track_time: float | None
+    tracks: list[Track]
 
 
 class PlaylistResponse(BaseModel):
     id: UUID4
+    name: str
+    repeat: bool
+    shuffle: bool
+    track_time: float | None = None
+    tracks: list[Track]
+
+
+class Segment(BaseModel):
+    id: int
+    name: str
+    start: int
+    stop: int | None = None
+    start_y: int | None = None
+    stop_y: int | None = None
+    length: int | None = None
+    grouping: int | None = None
+    spacing: int | None = None
+
+
+class SegmentSetRequest(BaseModel):
     host_id: UUID4
     name: str
-    shuffle: bool
-    entries: list[PlaylistEntry]
+    segments: list[Segment]
+
+
+class SegmentSetResponse(SegmentSetRequest):
+    id: UUID4
+    host: AnyUrl

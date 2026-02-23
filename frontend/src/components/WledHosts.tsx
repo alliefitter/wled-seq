@@ -1,18 +1,23 @@
 import { DataGrid } from "@mui/x-data-grid";
-import { deleteWledHost, executeRandom, listWledHosts } from "../api.ts";
+import {
+  deleteWledHost,
+  executeRandom,
+  listWledHosts,
+  powerOffWledHost,
+  stopWledHost,
+} from "../api.ts";
 import {
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogTitle,
-  Toolbar,
   IconButton,
+  Toolbar,
 } from "@mui/material";
-import { ShuffleOn } from "@mui/icons-material";
-import { Delete } from "@mui/icons-material";
+import { Delete, PowerOff, ShuffleOn, Stop } from "@mui/icons-material";
 import WledHostDialog from "./WledHostDialog.tsx";
-import { useEffect, useState, type MouseEvent } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import type { WledHostResponse } from "../types/api";
 import { Fragment } from "react/jsx-runtime";
 
@@ -56,6 +61,7 @@ function DeleteButton({ id, url, fetchRows }: DeleteButtonProps) {
 }
 
 function WledHostsGrid() {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<WledHostResponse[]>([]);
   const [hostData, setHostData] = useState<WledHostResponse>();
   const [open, setOpen] = useState<boolean>(false);
@@ -85,6 +91,42 @@ function WledHostsGrid() {
       },
     },
     {
+      field: "stop",
+      flex: 0.2,
+      headerName: "",
+      renderCell: (params: { row: WledHostResponse }) => {
+        const { id } = params.row;
+        return (
+          <IconButton
+            onClick={async (event: MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation();
+              await stopWledHost(id);
+            }}
+          >
+            <Stop />
+          </IconButton>
+        );
+      },
+    },
+    {
+      field: "powerOff",
+      flex: 0.2,
+      headerName: "",
+      renderCell: (params: { row: WledHostResponse }) => {
+        const { id } = params.row;
+        return (
+          <IconButton
+            onClick={async (event: MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation();
+              await powerOffWledHost(id);
+            }}
+          >
+            <PowerOff />
+          </IconButton>
+        );
+      },
+    },
+    {
       field: "delete",
       headerName: "",
       flex: 0.2,
@@ -95,7 +137,11 @@ function WledHostsGrid() {
     },
   ];
   useEffect(() => {
-    listWledHosts().then((hosts) => setRows(hosts));
+    setIsLoading(true);
+    listWledHosts().then((hosts) => {
+      setRows(hosts);
+      setIsLoading(false);
+    });
   }, [listWledHosts, setRows]);
   return (
     <Box sx={{ padding: "10px" }}>
@@ -117,6 +163,7 @@ function WledHostsGrid() {
       </Toolbar>
       <DataGrid
         columns={columns}
+        loading={isLoading}
         rows={rows}
         disableRowSelectionOnClick
         onRowClick={(params) => {

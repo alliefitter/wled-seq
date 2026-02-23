@@ -37,7 +37,9 @@ function SequenceReference({
   };
 
   useEffect(() => {
-    updateParent(data || null);
+    if (JSON.stringify(data) !== JSON.stringify(value)) {
+      updateParent(data || null);
+    }
   }, [data]);
 
   return (

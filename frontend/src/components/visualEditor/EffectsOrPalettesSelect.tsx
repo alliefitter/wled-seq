@@ -39,7 +39,9 @@ function EffectsOrPalettesSelect({
   };
 
   useEffect(() => {
-    updateParent(data);
+    if (JSON.stringify(data) !== JSON.stringify(value)) {
+      updateParent(data);
+    }
   }, [data]);
 
   return (

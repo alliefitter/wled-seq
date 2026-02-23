@@ -9,6 +9,10 @@ import SequenceGrid from "./components/Sequences.tsx";
 import { useState } from "react";
 import Sequence from "./components/Sequence.tsx";
 import Editor from "./components/Editor.tsx";
+import PlaylistGrid from "./components/Playlists.tsx";
+import Playlist from "./components/Playlist.tsx";
+import SegmentSet from "./components/SegmentSet.tsx";
+import SegmentSetGrid from "./components/SegmentSets.tsx";
 
 function App() {
   const [expanded, setExpanded] = useState(false);
@@ -79,6 +83,12 @@ function App() {
                 <Route path="/wled-hosts" element={<WledHostsGrid />} />
                 <Route path="/sequences" element={<SequenceGrid />} />
                 <Route path="/sequences/:id" element={<Sequence />} />
+                <Route path="/playlists" element={<PlaylistGrid />} />
+                <Route path="/playlists/:id" element={<Playlist />} />
+                <Route path="/playlists/create" element={<Playlist />} />
+                <Route path="/segmentSets" element={<SegmentSetGrid />} />
+                <Route path="/segmentSets/:id" element={<SegmentSet />} />
+                <Route path="/segmentSets/create" element={<SegmentSet />} />
               </Routes>
             </Box>
           </Box>

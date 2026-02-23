@@ -1,0 +1,57 @@
+# PyCharm IDE
+.idea/
+# Optional: Uncomment the following line to ignore local history files
+# .idea/workspace.xml
+# Optional: Uncomment the following lines to ignore specific user settings if needed
+# .idea/tasks.xml
+# .idea/shelf/
+
+# Python
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg
+
+# Virtual environments
+.env
+venv/
+env/
+# other common virtual env names
+*/venv/
+*/.venv/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+
+# Misc
+*.log
+pip-log.txt
+
+share/db/

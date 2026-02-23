@@ -13,33 +13,29 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel, conint, constr
 class On(Enum):
     bool_True = True
     bool_False = False
-    t = 't'
-    f = 'f'
+    t = "t"
+    f = "f"
 
 
 class Nl(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="allow",
     )
-    on: Optional[bool] = Field(None, description='Turn nightlight on or off.')
-    dur: Optional[int] = Field(None, description='Duration in minutes.')
-    mode: Optional[conint(ge=0, le=3)] = Field(
-        None, description='Mode: 0=instant, 1=fade, 2=color fade, 3=sunrise.'
-    )
-    tbri: Optional[conint(ge=0, le=255)] = Field(
-        None, description='Target brightness at the end.'
-    )
+    on: Optional[bool] = Field(None, description="Turn nightlight on or off.")
+    dur: Optional[int] = Field(None, description="Duration in minutes.")
+    mode: Optional[conint(ge=0, le=3)] = Field(None, description="Mode: 0=instant, 1=fade, 2=color fade, 3=sunrise.")
+    tbri: Optional[conint(ge=0, le=255)] = Field(None, description="Target brightness at the end.")
 
 
 class Udpn(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="allow",
     )
-    send: Optional[bool] = Field(None, description='Enable UDP send.')
-    recv: Optional[bool] = Field(None, description='Enable UDP receive.')
-    sgrp: Optional[conint(ge=0, le=255)] = Field(None, description='Send group.')
-    rgrp: Optional[conint(ge=0, le=255)] = Field(None, description='Receive group.')
-    nn: Optional[bool] = Field(None, description='Do not send notifications.')
+    send: Optional[bool] = Field(None, description="Enable UDP send.")
+    recv: Optional[bool] = Field(None, description="Enable UDP receive.")
+    sgrp: Optional[conint(ge=0, le=255)] = Field(None, description="Send group.")
+    rgrp: Optional[conint(ge=0, le=255)] = Field(None, description="Receive group.")
+    nn: Optional[bool] = Field(None, description="Do not send notifications.")
 
 
 class ColItem(RootModel[conint(ge=0, le=255)]):
@@ -48,99 +44,67 @@ class ColItem(RootModel[conint(ge=0, le=255)]):
 
 class SegItem(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="allow",
     )
-    id: Optional[conint(ge=0)] = Field(None, description='Segment ID.')
-    start: Optional[conint(ge=0)] = Field(None, description='Start LED index.')
-    stop: Optional[conint(ge=0)] = Field(
-        None, description='Stop LED index (exclusive).'
+    id: Optional[conint(ge=0)] = Field(None, description="Segment ID.")
+    start: Optional[conint(ge=0)] = Field(None, description="Start LED index.")
+    stop: Optional[conint(ge=0)] = Field(None, description="Stop LED index (exclusive).")
+    startY: Optional[conint(ge=0)] = Field(None, description="Start row (2D mode).")
+    stopY: Optional[conint(ge=1)] = Field(None, description="Stop row (2D mode).")
+    len: Optional[conint(ge=0)] = Field(None, description="Length (stop - start).")
+    grp: Optional[conint(ge=0, le=255)] = Field(None, description="LEDs per group.")
+    spc: Optional[conint(ge=0, le=255)] = Field(None, description="LEDs to skip between groups.")
+    of: Optional[int] = Field(None, description="Offset/rotation amount.")
+    rev: Optional[bool] = Field(None, description="Reverse horizontally (1D) or X-axis (2D).")
+    rY: Optional[bool] = Field(None, description="Reverse vertically (2D).")
+    on: Optional[bool] = Field(None, description="Enable/disable this segment.")
+    bri: Optional[conint(ge=0, le=255)] = Field(None, description="Segment brightness.")
+    mi: Optional[bool] = Field(None, description="Mirror horizontally (1D).")
+    mY: Optional[bool] = Field(None, description="Mirror vertically (2D).")
+    tp: Optional[bool] = Field(None, description="Transpose (swap X/Y axes in 2D).")
+    cct: Optional[int] = Field(None, description="Color temperature (0–255).")
+    col: Optional[List[Union[List[ColItem], constr(pattern=r"^[0-9A-Fa-f]{6,8}$")]]] = Field(
+        None,
+        description="Colors: up to 3 [R,G,B] or [R,G,B,W] arrays or hex strings.",
+        max_length=3,
+        min_length=1,
     )
-    startY: Optional[conint(ge=0)] = Field(None, description='Start row (2D mode).')
-    stopY: Optional[conint(ge=1)] = Field(None, description='Stop row (2D mode).')
-    len: Optional[conint(ge=0)] = Field(None, description='Length (stop - start).')
-    grp: Optional[conint(ge=0, le=255)] = Field(None, description='LEDs per group.')
-    spc: Optional[conint(ge=0, le=255)] = Field(
-        None, description='LEDs to skip between groups.'
-    )
-    of: Optional[int] = Field(None, description='Offset/rotation amount.')
-    rev: Optional[bool] = Field(
-        None, description='Reverse horizontally (1D) or X-axis (2D).'
-    )
-    rY: Optional[bool] = Field(None, description='Reverse vertically (2D).')
-    on: Optional[bool] = Field(None, description='Enable/disable this segment.')
-    bri: Optional[conint(ge=0, le=255)] = Field(None, description='Segment brightness.')
-    mi: Optional[bool] = Field(None, description='Mirror horizontally (1D).')
-    mY: Optional[bool] = Field(None, description='Mirror vertically (2D).')
-    tp: Optional[bool] = Field(None, description='Transpose (swap X/Y axes in 2D).')
-    cct: Optional[int] = Field(None, description='Color temperature (0–255).')
-    col: Optional[List[Union[List[ColItem], constr(pattern=r'^[0-9A-Fa-f]{6,8}$')]]] = (
-        Field(
-            None,
-            description='Colors: up to 3 [R,G,B] or [R,G,B,W] arrays or hex strings.',
-            max_length=3,
-            min_length=1,
-        )
-    )
-    fx: Optional[Union[int, str]] = Field(
-        None, description='Effect ID or special code (~, ~-, r).'
-    )
-    sx: Optional[Union[int, str]] = Field(None, description='Effect speed or code.')
-    ix: Optional[Union[int, str]] = Field(None, description='Effect intensity or code.')
-    c1: Optional[conint(ge=0, le=255)] = Field(None, description='Custom parameter 1.')
-    c2: Optional[conint(ge=0, le=255)] = Field(None, description='Custom parameter 2.')
-    c3: Optional[conint(ge=0, le=31)] = Field(None, description='Custom parameter 3.')
-    o1: Optional[bool] = Field(None, description='Custom boolean 1.')
-    o2: Optional[bool] = Field(None, description='Custom boolean 2.')
-    o3: Optional[bool] = Field(None, description='Custom boolean 3.')
-    pal: Optional[Union[int, str]] = Field(
-        None, description="Palette ID or 'r' for random."
-    )
-    sel: Optional[bool] = Field(None, description='Select this segment.')
+    fx: Optional[Union[int, str]] = Field(None, description="Effect ID or special code (~, ~-, r).")
+    sx: Optional[Union[int, str]] = Field(None, description="Effect speed or code.")
+    ix: Optional[Union[int, str]] = Field(None, description="Effect intensity or code.")
+    c1: Optional[conint(ge=0, le=255)] = Field(None, description="Custom parameter 1.")
+    c2: Optional[conint(ge=0, le=255)] = Field(None, description="Custom parameter 2.")
+    c3: Optional[conint(ge=0, le=31)] = Field(None, description="Custom parameter 3.")
+    o1: Optional[bool] = Field(None, description="Custom boolean 1.")
+    o2: Optional[bool] = Field(None, description="Custom boolean 2.")
+    o3: Optional[bool] = Field(None, description="Custom boolean 3.")
+    pal: Optional[Union[int, str]] = Field(None, description="Palette ID or 'r' for random.")
+    sel: Optional[bool] = Field(None, description="Select this segment.")
     m12: Optional[conint(ge=0, le=4)] = Field(
-        None, description='Matrix expand mode (0=pixels, 1=bar, 2=arc, 3=corner, etc).'
+        None, description="Matrix expand mode (0=pixels, 1=bar, 2=arc, 3=corner, etc)."
     )
-    fxdef: Optional[bool] = Field(
-        None, description='Load default parameters from effect.'
-    )
-    set: Optional[conint(ge=0, le=3)] = Field(
-        None, description='Segment group/set index.'
-    )
-    rpt: Optional[bool] = Field(
-        None, description='Repeat this segment pattern to fill LEDs.'
-    )
+    fxdef: Optional[bool] = Field(None, description="Load default parameters from effect.")
+    set: Optional[conint(ge=0, le=3)] = Field(None, description="Segment group/set index.")
+    rpt: Optional[bool] = Field(None, description="Repeat this segment pattern to fill LEDs.")
 
 
 class WledState(BaseModel):
     model_config = ConfigDict(
-        extra='forbid',
+        extra="allow",
     )
-    on: Optional[On] = Field(
-        None, description="On/Off state of the light. You can also use 't' to toggle."
-    )
-    bri: Optional[conint(ge=0, le=255)] = Field(
-        None, description='Brightness of the light (0–255).'
-    )
-    transition: Optional[conint(ge=0)] = Field(
-        None, description='Default transition time in tenths of a second.'
-    )
-    tt: Optional[conint(ge=0)] = Field(
-        None, description='Temporary transition time for next change only.'
-    )
-    ps: Optional[int] = Field(None, description='Preset ID to apply.')
-    psave: Optional[int] = Field(
-        None, description='Save current state to given preset ID.'
-    )
-    nl: Optional[Nl] = Field(None, description='Nightlight configuration.')
-    udpn: Optional[Udpn] = Field(None, description='UDP sync configuration.')
-    live: Optional[bool] = Field(None, description='Enable or disable live data mode.')
+    on: Optional[On] = Field(None, description="On/Off state of the light. You can also use 't' to toggle.")
+    bri: Optional[conint(ge=0, le=255)] = Field(None, description="Brightness of the light (0–255).")
+    transition: Optional[conint(ge=0)] = Field(None, description="Default transition time in tenths of a second.")
+    tt: Optional[conint(ge=0)] = Field(None, description="Temporary transition time for next change only.")
+    ps: Optional[int] = Field(None, description="Preset ID to apply.")
+    psave: Optional[int] = Field(None, description="Save current state to given preset ID.")
+    nl: Optional[Nl] = Field(None, description="Nightlight configuration.")
+    udpn: Optional[Udpn] = Field(None, description="UDP sync configuration.")
+    live: Optional[bool] = Field(None, description="Enable or disable live data mode.")
     lor: Optional[conint(ge=0, le=2)] = Field(
         None,
-        description='Live data override mode: 0=off, 1=until live ends, 2=until reboot.',
+        description="Live data override mode: 0=off, 1=until live ends, 2=until reboot.",
     )
-    time: Optional[conint(ge=0)] = Field(
-        None, description='Set system time (Unix timestamp).'
-    )
-    mainseg: Optional[conint(ge=0)] = Field(
-        None, description='Index of the main segment.'
-    )
-    seg: Optional[List[SegItem]] = Field(None, description='Array of segment objects.')
+    time: Optional[conint(ge=0)] = Field(None, description="Set system time (Unix timestamp).")
+    mainseg: Optional[conint(ge=0)] = Field(None, description="Index of the main segment.")
+    seg: Optional[List[SegItem]] = Field(None, description="Array of segment objects.")

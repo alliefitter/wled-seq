@@ -2,17 +2,20 @@ from logging import getLogger
 from typing import Awaitable, Callable
 from uuid import UUID, uuid4
 
+from pydantic import TypeAdapter
 from sqlalchemy import (
-    TEXT,
     Dialect,
     ForeignKey,
     TypeDecorator,
     create_engine,
+    false,
 )
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as POSTGRES_UUID
 from sqlalchemy.orm import (
     DeclarativeBase,
+    Mapped,
     MappedAsDataclass,
-    MappedColumn,
     Session,
     mapped_column,
     relationship,
@@ -22,15 +25,17 @@ from sqlalchemy_utils import create_database, database_exists
 from starlette.requests import Request
 from starlette.responses import Response
 
+from lib.model.api import Segment, Track
 from lib.model.sequence import LedSequence
 from lib.settings import get_settings
 
 settings = get_settings()
-print(str(settings.db_url))
 engine = create_engine(str(settings.db_url))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 logger = getLogger(__name__)
+tracks_adapter = TypeAdapter(list[Track])
+segments_adapter = TypeAdapter(list[Segment])
 
 
 async def db_session_middleware(
@@ -67,93 +72,111 @@ def ensure_database_exists():
     engine.dispose()
 
 
-class SqliteLedSequence(TypeDecorator):
-    impl = TEXT
+class PostgresLedSequence(TypeDecorator):
+    impl = JSONB
     cache_ok = True
 
     def process_bind_param(self, value: LedSequence | dict, dialect: Dialect):
         if value is not None:
-            return value.model_dump_json(exclude_unset=True, by_alias=True)
+            return value.model_dump(mode="json", exclude_unset=True, by_alias=True)
         return value
 
     def process_result_value(self, value: str, dialect: Dialect):
         if value is not None:
-            return LedSequence.model_validate_json(value)
+            return LedSequence.model_validate(value)
         return value
 
     def python_type(self):
         return LedSequence
 
 
-class SqliteUuid(TypeDecorator):
-    impl = TEXT
+class PostgresTracks(TypeDecorator):
+    impl = JSONB
     cache_ok = True
 
-    def process_bind_param(self, value: UUID, dialect: Dialect):
+    def process_bind_param(self, value: list[Track] | dict, dialect: Dialect):
         if value is not None:
-            return str(value)
+            return tracks_adapter.dump_python(value, exclude_unset=True, by_alias=True, mode="json")
         return value
 
     def process_result_value(self, value: str, dialect: Dialect):
         if value is not None:
-            return UUID(value)
+            return tracks_adapter.validate_python(value)
         return value
 
     def python_type(self):
-        return UUID
+        return list[Track]
+
+
+class PostgresSegments(TypeDecorator):
+    impl = JSONB
+    cache_ok = True
+
+    def process_bind_param(self, value: list[Track] | dict, dialect: Dialect):
+        if value is not None:
+            return segments_adapter.dump_python(
+                value, exclude_unset=True, by_alias=True, mode="json"
+            )
+        return value
+
+    def process_result_value(self, value: str, dialect: Dialect):
+        if value is not None:
+            return segments_adapter.validate_python(value)
+        return value
+
+    def python_type(self):
+        return list[Segment]
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
-    type_annotation_map = {UUID: SqliteUuid, LedSequence: SqliteLedSequence}
+    type_annotation_map = {
+        UUID: POSTGRES_UUID,
+        LedSequence: PostgresLedSequence,
+        list[Track]: PostgresTracks,
+        list[Segment]: PostgresSegments,
+    }
 
 
-class WledHost(Base):
+class WledHostOrm(Base):
     __tablename__ = "wled_host"
-    id: MappedColumn[UUID] = mapped_column(
-        default_factory=lambda: uuid4(), primary_key=True, init=False
-    )
-    url: MappedColumn[str]
+    id: Mapped[UUID] = mapped_column(default_factory=lambda: uuid4(), primary_key=True, init=False)
+    url: Mapped[str]
 
-    sequences: MappedColumn[list["Sequence"]] = relationship(
-        back_populates="host", init=False
-    )
+    sequences: Mapped[list["SequenceOrm"]] = relationship(back_populates="host", init=False)
+    segment_sets: Mapped[list["SegmentSetOrm"]] = relationship(back_populates="host", init=False)
 
 
-class Sequence(Base):
+class SegmentSetOrm(Base):
+    __tablename__ = "segment_set"
+
+    id: Mapped[UUID] = mapped_column(default_factory=lambda: uuid4(), primary_key=True, init=False)
+    host_id: Mapped[UUID] = mapped_column(ForeignKey("wled_host.id"))
+    name: Mapped[str]
+    segments: Mapped[list[Segment]]
+
+    host: Mapped[WledHostOrm] = relationship(back_populates="segment_sets", init=False)
+
+
+class SequenceOrm(Base):
     __tablename__ = "sequence"
 
-    id: MappedColumn[UUID] = mapped_column(
-        default_factory=lambda: uuid4(), primary_key=True, init=False
+    id: Mapped[UUID] = mapped_column(default_factory=lambda: uuid4(), primary_key=True, init=False)
+    name: Mapped[str]
+    host_id: Mapped[UUID] = mapped_column(ForeignKey("wled_host.id"))
+    segment_set_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("segment_set.id"), server_default=None
     )
-    name: MappedColumn[str]
-    host_id: MappedColumn[UUID] = mapped_column(ForeignKey("wled_host.id"))
-    sequence: MappedColumn[LedSequence]
+    sequence: Mapped[LedSequence]
 
-    host: MappedColumn[WledHost] = relationship(back_populates="sequences", init=False)
-
-
-class PlaylistEntry(Base):
-    __tablename__ = "playlist_entry"
-    id: MappedColumn[UUID] = mapped_column(
-        default_factory=lambda: uuid4(), primary_key=True, init=False
-    )
-    playlist_id: MappedColumn[UUID] = mapped_column(ForeignKey("playlist.id"))
-    sequence_id: MappedColumn[UUID] = mapped_column(ForeignKey("sequence.id"))
-    order: MappedColumn[int]
-    playlist: MappedColumn["Playlist"] = relationship(
-        back_populates="entries", init=False
-    )
-    sequence: MappedColumn[Sequence] = relationship(init=False)
+    host: Mapped[WledHostOrm] = relationship(back_populates="sequences", init=False)
+    segment_set: Mapped[SegmentSetOrm | None] = relationship(init=False)
 
 
-class Playlist(Base):
+class PlaylistOrm(Base):
     __tablename__ = "playlist"
-    id: MappedColumn[UUID] = mapped_column(
-        default_factory=lambda: uuid4(), primary_key=True, init=False
-    )
-    host_id: MappedColumn[UUID] = mapped_column(ForeignKey("wled_host.id"))
-    name: MappedColumn[str]
-    shuffle: MappedColumn[bool]
-    entries: MappedColumn[list[PlaylistEntry]] = relationship(
-        back_populates="playlist", init=False
-    )
+    id: Mapped[UUID] = mapped_column(default_factory=lambda: uuid4(), primary_key=True, init=False)
+    name: Mapped[str]
+    shuffle: Mapped[bool]
+    tracks: Mapped[list[Track]]
+    track_time: Mapped[float | None] = mapped_column(default=None)
+    repeat: Mapped[bool] = mapped_column(default=False, server_default=false())

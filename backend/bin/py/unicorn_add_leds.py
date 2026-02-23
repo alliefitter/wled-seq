@@ -1,11 +1,11 @@
-from api.orm import Sequence, SessionLocal
+from api.orm import SequenceOrm, SessionLocal
 from lib.model.sequence import LedSequence
 
 
 def main():
     db = SessionLocal()
     for sequence in (
-        db.query(Sequence)
+        db.query(SequenceOrm)
         .filter_by(host_id="ed42fb69-749e-41b6-b9b0-3b40c17ee7ce")
         .all()
     ):

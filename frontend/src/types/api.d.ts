@@ -11,6 +11,20 @@ export type ColItem = number;
 export interface CreateResponse {
   id: string;
 }
+export interface EffectField {
+  key: string;
+  label: string;
+}
+export interface EffectsItem {
+  id: number;
+  value: string;
+  fields: EffectField[];
+  uses_palette: boolean;
+  colors: string[];
+}
+export interface ExecuteRandomRequest {
+  sleep_time: number;
+}
 export interface ExecuteSequenceRequest {
   host_id: string;
   sequence: LedSequence;
@@ -21,26 +35,49 @@ export interface LedSequence {
    */
   repeat?: boolean;
   /**
-   * Execute elements in a random order.
+   * Execute items in a random order.
    */
   random?: boolean;
   /**
    * An array of sequence elements.
    */
-  elements: WledSequenceElement[];
+  elements?: WledSequenceElement[];
+  [k: string]: unknown;
+}
+
+export interface VisualSegItem extends Omit<
+  SegItem,
+  "id" | "start" | "stop" | "startY" | "stopY" | "len" | "grp" | "spc"
+> {
+  segments: Segment[];
+}
+
+export type VisualWledState = Omit<WledState, "seg"> & {
+  seg?: VisualSegItem[];
+};
+
+export type VisualSequenceElement = Omit<WledSequenceElement, "state"> & {
+  state?: VisualWledState;
+};
+
+export interface VisualLedSequence extends Omit<LedSequence, "elements"> {
+  elements?: VisualSequenceElement[];
 }
 export interface WledSequenceElement {
-  $ref?: string;
-  state: WledState;
   /**
-   * How long the sequence element should be displayed until the next element is displayed.
+   * Reference another sequence by Id.
+   */
+  $ref?: string | null;
+  /**
+   * The WLED JSON API state object. See: https://kno.wled.ge/interfaces/json-api/
+   */
+  state?: WledState | null;
+  /**
+   * How long the sequence item should be displayed until the next item is displayed.
    */
   sleep_time?: number;
   [k: string]: unknown;
 }
-/**
- * The WLED JSON API state object. See: https://kno.wled.ge/interfaces/json-api/
- */
 export interface WledState {
   /**
    * On/Off state of the light. You can also use 't' to toggle.
@@ -273,14 +310,65 @@ export interface SegItem {
    */
   rpt?: boolean | null;
 }
+export interface PlaylistRequest {
+  name: string;
+  repeat: boolean;
+  shuffle: boolean;
+  track_time: number | null;
+  tracks: Track[];
+}
+export interface Track {
+  id: string;
+  sequence_id: string;
+  name: string;
+  overrides: TrackOverrides;
+}
+export interface TrackOverrides {
+  track_time?: number | null;
+  repeat?: boolean | null;
+  [k: string]: unknown;
+}
+export interface PlaylistResponse {
+  id: string;
+  name: string;
+  repeat: boolean;
+  shuffle: boolean;
+  track_time?: number | null;
+  tracks: Track[];
+}
+export interface Segment {
+  id: number;
+  name: string;
+  start: number;
+  stop?: number | null;
+  start_y?: number | null;
+  stop_y?: number | null;
+  length?: number | null;
+  grouping?: number | null;
+  spacing?: number | null;
+}
+export interface SegmentSetRequest {
+  host_id: string;
+  name: string;
+  segments: Segment[];
+}
+export interface SegmentSetResponse {
+  host_id: string;
+  name: string;
+  segments: Segment[];
+  id: string;
+  host: string;
+}
 export interface SequenceListItem {
   id: string;
   host_id: string;
   host: string;
+  segment_set_id: string;
   name: string;
 }
 export interface SequenceRequest {
   host_id: string;
+  segment_set_id: string;
   name: string;
   sequence: LedSequence;
 }
@@ -288,6 +376,7 @@ export interface SequenceResponse {
   id: string;
   host_id: string;
   host: string;
+  segment_set_id: string;
   name: string;
   sequence: LedSequence;
 }
@@ -297,4 +386,5 @@ export interface WledHostRequest {
 export interface WledHostResponse {
   id: string;
   url: string;
+  segment_sets: SegmentSetResponse[];
 }

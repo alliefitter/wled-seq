@@ -3,7 +3,7 @@ includes:
   root: ../Taskfile.yaml
 tasks:
   pydantic-to-typescript:
-    cmd: poetry run pydantic2ts --module ./src/api/model.py --output ../frontend/src/types/api.d.ts
+    cmd: poetry run pydantic2ts --module ./src/lib/model/api.py --output ../frontend/src/types/api.d.ts
 
   make-wled-models:
     cmd: poetry run datamodel-codegen --input ../share/schema/wled_state_schema.json --input-file-type jsonschema --output ./src/lib/model/wled.py --output-model-type pydantic_v2.BaseModel
@@ -15,3 +15,9 @@ tasks:
 
   run-server:
     cmd: poetry run uvicorn api.main:app --port 8080 --reload --log-config logging.yaml
+  
+  run-daemon:
+    cmd: poetry run python -m led_daemon
+
+  format:
+    cmd: poetry run ruff format src/

@@ -1,5 +1,8 @@
 services:
   api:
+    user: 1000:1000
+    profiles:
+      - wled-seq
     restart: unless-stopped
     build:
       context: backend
@@ -9,9 +12,10 @@ services:
     environment:
       WLED_SEQ_MQTT_URL: mqtt
       WLED_SEQ_DB_URL: sqlite:///wled-seq.db
-    volumes:
-      - ./share/db/wled-seq.db:/app/wled-seq.db
   led-daemon:
+    user: 1000:1000
+    profiles:
+      - wled-seq
     depends_on:
       - mqtt
     restart: unless-stopped
@@ -20,8 +24,11 @@ services:
       dockerfile: ../share/docker/led-daemon.Dockerfile
     environment:
       WLED_SEQ_MQTT_URL: mqtt
-      WLED_SEQ_DB_URL: sqlite:///wled_seq.db
+      WLED_SEQ_DB_URL: postgresql://postgres:postgres@postgres:39344/wled_seq
   frontend:
+    user: 1000:1000
+    profiles:
+      - wled-seq
     restart: unless-stopped
     build:
       context: frontend
@@ -31,7 +38,22 @@ services:
     ports:
       - "8081:80"
   mqtt:
+    user: 1000:1000
     image: eclipse-mosquitto:latest
     restart: unless-stopped
     volumes:
       - ./share/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+  postgres:
+    user: 1000:1000
+    image: postgres:16.3
+    restart: always
+    pull_policy: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./share/db:/var/lib/postgresql/data
+    ports:
+      - "39344:5432"
+    environment:
+      POSTGRES_DB: wled_seq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres

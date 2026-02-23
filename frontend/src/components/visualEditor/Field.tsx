@@ -46,7 +46,9 @@ function Field({
   };
 
   useEffect(() => {
-    updateParent(data);
+    if (JSON.stringify(data) !== JSON.stringify(value)) {
+      updateParent(data);
+    }
   }, [data]);
 
   let field = (
