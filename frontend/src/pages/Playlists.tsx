@@ -1,21 +1,21 @@
-import { DataGrid } from "@mui/x-data-grid";
 import { executePlaylistId, listPlaylists } from "../api.ts";
 import {
   Box,
   Button,
   IconButton,
+  TextField,
   Toolbar,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-import type { PlaylistResponse } from "../types/api";
+import { type ChangeEvent, useState } from "react";
+import type { ListPlaylistFilters, PlaylistResponse } from "../types/api";
 import { useNavigate } from "react-router-dom";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import Table from "../components/Table.tsx";
 
 function PlaylistGrid() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [rows, setRows] = useState<PlaylistResponse[]>([]);
+  const [filters, setFilters] = useState<ListPlaylistFilters>({ hosts: [] });
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -43,13 +43,12 @@ function PlaylistGrid() {
     ? columns.filter((c) => c.field !== "id")
     : columns;
 
-  useEffect(() => {
-    setIsLoading(true);
-    listPlaylists().then((playlists) => {
-      setRows(playlists);
-      setIsLoading(false);
+  const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setFilters((prev) => {
+      return { ...prev, name: event.target.value };
     });
-  }, [listPlaylists(), setRows]);
+  };
+
   return (
     <Box sx={{ padding: "10px" }}>
       <Toolbar
@@ -61,11 +60,17 @@ function PlaylistGrid() {
         }}
       >
         <Button onClick={() => navigate("/playlists/create")}>Create</Button>
+        <TextField
+          label="Name"
+          variant="filled"
+          value={filters.name}
+          onChange={handleNameChange}
+        />
       </Toolbar>
-      <DataGrid
+      <Table
+        listItems={listPlaylists}
+        filters={filters}
         columns={visibleColumns}
-        loading={isLoading}
-        rows={rows}
         disableRowSelectionOnClick
         onRowClick={(params) => navigate(`/playlists/${params.id}`)}
       />

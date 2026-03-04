@@ -328,6 +328,9 @@ export interface TrackOverrides {
   repeat?: boolean | null;
   [k: string]: unknown;
 }
+export interface ListPlaylistFilters {
+  name?: string;
+}
 export interface PlaylistResponse {
   id: string;
   name: string;
@@ -352,12 +355,20 @@ export interface SegmentSetRequest {
   name: string;
   segments: Segment[];
 }
+export interface ListSegmentSetFilters {
+  hosts: string[];
+  name?: string;
+}
 export interface SegmentSetResponse {
   host_id: string;
   name: string;
   segments: Segment[];
   id: string;
   host: string;
+}
+export interface ListSequenceFilters {
+  hosts: string[];
+  name?: string;
 }
 export interface SequenceListItem {
   id: string;
@@ -387,4 +398,12 @@ export interface WledHostResponse {
   id: string;
   url: string;
   segment_sets: SegmentSetResponse[];
+}
+export interface ListResponse<T> {
+  items: T;
+  total: number;
+  current_page: string | null;
+  current_page_backwards: string | null;
+  previous_page: string | null;
+  next_page: string | null;
 }

@@ -22,6 +22,7 @@ dependencies = [
     "sqlalchemy-utils (>=0.42.0,<0.43.0)",
     "psycopg2 (>=2.9.11,<3.0.0)",
     "logfmter (>=0.0.11,<0.0.12)",
+    "fastapi-pagination[sqlalchemy] (>=0.15.10,<0.16.0)",
 ]
 
 [tool.poetry]

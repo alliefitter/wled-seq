@@ -57,7 +57,7 @@ class Service:
                 if wled.should_kill():
                     was_killed = True
                     break
-                await wled.clear_thread_if_alive()
+                await wled.clear_task_if_alive()
 
                 logger.info(
                     f"Executing sequence {sequence.name}",
@@ -113,7 +113,7 @@ class Service:
                 sequence_ids.append(SequenceListItem.model_validate(item).id)
 
             while not wled.should_kill():
-                await wled.clear_thread_if_alive()
+                await wled.clear_task_if_alive()
                 sequence_id = choice(sequence_ids)
                 while previous_sequence_id == sequence_id:
                     sequence_id = choice(sequence_ids)
@@ -122,6 +122,10 @@ class Service:
                 sequence = await self._get_sequence(client, sequence_id, message.base_url)
                 await wled.execute(sequence.sequence, sequence.segment_set_id)
                 await wled.sleep(message.sleep_time)
+
+    async def shutdown(self):
+        for client in self.wled_clients.values():
+            await client.shutdown()
 
     async def stop(self, host: AnyUrl):
         logger.info(f"Stopping host {host}")

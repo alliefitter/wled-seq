@@ -44,6 +44,7 @@ class CreateResponse(BaseModel):
 class ExecuteSequenceRequest(BaseModel):
     host_id: UUID4
     sequence: LedSequence
+    segment_set_id: UUID4
 
 
 class ExecuteRandomRequest(BaseModel):

@@ -163,9 +163,7 @@ class SequenceOrm(Base):
     id: Mapped[UUID] = mapped_column(default_factory=lambda: uuid4(), primary_key=True, init=False)
     name: Mapped[str]
     host_id: Mapped[UUID] = mapped_column(ForeignKey("wled_host.id"))
-    segment_set_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("segment_set.id"), server_default=None
-    )
+    segment_set_id: Mapped[UUID] = mapped_column(ForeignKey("segment_set.id"))
     sequence: Mapped[LedSequence]
 
     host: Mapped[WledHostOrm] = relationship(back_populates="sequences", init=False)

@@ -16,7 +16,7 @@ import {
   Toolbar,
 } from "@mui/material";
 import { Delete, PowerOff, ShuffleOn, Stop } from "@mui/icons-material";
-import WledHostDialog from "./WledHostDialog.tsx";
+import WledHostDialog from "../components/WledHostDialog.tsx";
 import { type MouseEvent, useEffect, useState } from "react";
 import type { WledHostResponse } from "../types/api";
 import { Fragment } from "react/jsx-runtime";
@@ -142,7 +142,7 @@ function WledHostsGrid() {
       setRows(hosts);
       setIsLoading(false);
     });
-  }, [listWledHosts, setRows]);
+  }, [setIsLoading, setRows]);
   return (
     <Box sx={{ padding: "10px" }}>
       <Toolbar

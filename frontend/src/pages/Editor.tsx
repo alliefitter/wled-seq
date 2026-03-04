@@ -1,15 +1,18 @@
 import {
   Box,
   Button,
+  FormControl,
   FormControlLabel,
+  InputLabel,
   MenuItem,
   Select,
   type SelectChangeEvent,
   Switch,
   TextField,
+  Tooltip,
   Typography
 } from "@mui/material";
-import WledHostDataDialog from "./WledHostDataDialog.tsx";
+import WledHostDataDialog from "../components/WledHostDataDialog.tsx";
 import {
   createSequence,
   type Effects,
@@ -40,11 +43,11 @@ import type {
   WledHostResponse,
   WledState
 } from "../types/api";
-import YamlEditor from "./YamlEditor.tsx";
-import VisualEditor from "./visualEditor/VisualEditor.tsx";
-import DeleteButton from "./DeleteButton.tsx";
+import YamlEditor from "../components/YamlEditor.tsx";
+import VisualEditor from "../components/visualEditor/VisualEditor.tsx";
+import DeleteButton from "../components/DeleteButton.tsx";
 import { Description, Visibility } from "@mui/icons-material";
-import { IGNORED_FIELDS } from "./visualEditor/util.tsx";
+import { IGNORED_FIELDS } from "../components/visualEditor/util.tsx";
 
 const sequenceValidator = new Ajv().compile(ledSequenceSchema);
 
@@ -52,29 +55,42 @@ function validateEmptySegments(
   sequence: VisualLedSequence,
   showError: boolean = true,
 ): boolean {
+  const errors = [];
   for (const [i, element] of (sequence?.elements || []).entries()) {
     for (const [n, seg] of (element?.state?.seg || []).entries()) {
       if (seg.segments.length === 0) {
-        if (showError) {
-          toast.error(`Segment ${n} of element ${i} has no selected segments`);
-        }
-        return false;
+        errors.push(
+          <li>
+            Segment {n + 1} of element {i + 1} has no selected segments
+          </li>,
+        );
       }
     }
+  }
+  if (errors.length > 0) {
+    if (showError) {
+      toast.error(<ul>{errors}</ul>, { autoClose: 15000 });
+    }
+    return false;
   }
   return true;
 }
 
 function validate(
-  wledHost: string | null,
-  name: string | null | boolean,
+  wledHost: string,
+  name: string,
+  segmentSet: string,
   sequence: LedSequence,
 ): boolean {
-  if (!wledHost) {
+  if (wledHost.length === 0) {
     toast.error("Select a host");
     return false;
   }
-  if (name === null) {
+  if (segmentSet.length === 0) {
+    toast.error("Select a segment set");
+    return false;
+  }
+  if (name.length === 0) {
     toast.error("Enter a name");
     return false;
   }
@@ -319,10 +335,10 @@ function Editor({ id, mode }: EditorProps) {
   };
   const handleExecute = async () => {
     if (
-      validate(wledHost, false, sequence) ||
+      validate(wledHost, name, segmentSet, sequence) ||
       validateEmptySegments(visualSequence)
     ) {
-      await executeSequence(wledHost as string, sequence);
+      await executeSequence(wledHost as string, sequence, segmentSet);
     }
   };
 
@@ -332,7 +348,7 @@ function Editor({ id, mode }: EditorProps) {
       setCurrentMode("edit");
     } else if (
       currentMode === "create" &&
-      validate(wledHost, name, sequence) &&
+      validate(wledHost, name, segmentSet, sequence) &&
       validateEmptySegments(visualSequence)
     ) {
       const response = await createSequence(
@@ -344,7 +360,7 @@ function Editor({ id, mode }: EditorProps) {
       navigate(`/sequences/${response.id}`);
     } else if (
       currentMode === "edit" &&
-      validate(wledHost, name, sequence) &&
+      validate(wledHost, name, segmentSet, sequence) &&
       validateEmptySegments(visualSequence)
     ) {
       await updateSequence(
@@ -373,52 +389,82 @@ function Editor({ id, mode }: EditorProps) {
     setVisualSequence(sequence_);
   };
 
-  const getHostSatelliteData = async (hostId: string, segmentSetId: string) => {
-    await Promise.all([
-      getEffects(hostId).then((response) => {
-        setEffects(response);
-      }),
-      getPalettes(hostId).then((response) => {
-        setPalettes(response);
-      }),
-      listSequences(hostId).then((response) => {
-        setReferences(response.filter((s) => s.id !== id));
-      }),
-      listWledHostSegmentSets(hostId).then((segmentSets) => {
-        setSegmentSets(segmentSets);
-        const filteredSegments = segmentSets.filter(
-          (s) => s.id === segmentSetId,
-        );
-        setSegments(filteredSegments[0].segments);
-      }),
+  const getHostSatelliteData = async (hostId: string) => {
+    const [effects, palettes, references, segmentSets] = await Promise.all([
+      getEffects(hostId),
+      getPalettes(hostId),
+      listSequences({ hosts: [hostId] }, 100),
+      listWledHostSegmentSets(hostId),
     ]);
+
+    setEffects(effects);
+    setPalettes(palettes);
+    setReferences(references.items.filter((s) => s.id !== id));
+    setSegmentSets(segmentSets);
+    if (segmentSets.length) {
+      setSegmentSet(segmentSets[0].id);
+    }
+
+    return segmentSets;
   };
 
   useEffect(() => {
-    if (id && !isLoading && Object.keys(sequence).length === 0) {
+    let mounted = true;
+
+    (async () => {
       setIsLoading(true);
-      getSequence(id).then((response) => {
-        setWledHost(response.host_id);
-        setName(response.name);
-        setSequence(response.sequence);
-        setVisualSequence(fromLedSequence(response.sequence));
-        setSegmentSet(response.segment_set_id);
-        listWledHosts().then((hosts) => setHosts(hosts));
-        getHostSatelliteData(response.host_id, response.segment_set_id).then(
-          () => setIsLoading(false),
-        );
-      });
-    }
+
+      const hosts = await listWledHosts();
+      if (!mounted) return;
+      setHosts(hosts);
+
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+
+      const sequenceResponse = await getSequence(id);
+      if (!mounted) return;
+
+      setName(sequenceResponse.name);
+      setWledHost(sequenceResponse.host_id);
+      setSequence(sequenceResponse.sequence);
+      setVisualSequence(fromLedSequence(sequenceResponse.sequence));
+
+      const segmentSets = await getHostSatelliteData(sequenceResponse.host_id);
+
+      if (!mounted) return;
+
+      setSegmentSet(sequenceResponse.segment_set_id);
+
+      const selected = segmentSets.find(
+        (s) => s.id === sequenceResponse.segment_set_id,
+      );
+
+      if (selected) {
+        setSegments(selected.segments);
+      }
+
+      setIsLoading(false);
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   useEffect(() => {
-    if (wledHost) {
-      setIsLoading(true);
-      getHostSatelliteData(wledHost, segmentSet).then(() =>
-        setIsLoading(false),
-      );
-    }
-  }, [wledHost, segmentSet]);
+    if (!wledHost || id) return;
+
+    (async () => {
+      const segmentSets = await getHostSatelliteData(wledHost);
+      const first = segmentSets[0];
+      if (first) {
+        setSegmentSet(first.id);
+        setSegments(first.segments);
+      }
+    })();
+  }, [wledHost]);
 
   useEffect(() => {
     setCurrentMode(mode);
@@ -484,18 +530,19 @@ function Editor({ id, mode }: EditorProps) {
           {currentMode === "edit" && (
             <Button onClick={handleCancelClick}>Cancel</Button>
           )}
-
-          <FormControlLabel
-            control={
-              <Switch
-                disabled={!validateEmptySegments(visualSequence, false)}
-                value={yamlModeEnabled}
-                onChange={() => setYamlModeEnabled(!yamlModeEnabled)}
-              />
-            }
-            label={yamlModeEnabled ? <Visibility /> : <Description />}
-            labelPlacement="start"
-          />
+          <Tooltip title={yamlModeEnabled ? "Visual Mode" : "YAML Mode"}>
+            <FormControlLabel
+              control={
+                <Switch
+                  disabled={!validateEmptySegments(visualSequence, false)}
+                  value={yamlModeEnabled}
+                  onChange={() => setYamlModeEnabled(!yamlModeEnabled)}
+                />
+              }
+              label={yamlModeEnabled ? <Visibility /> : <Description />}
+              labelPlacement="start"
+            />
+          </Tooltip>
 
           <TextField
             label="Name"
@@ -513,41 +560,47 @@ function Editor({ id, mode }: EditorProps) {
             </>
           )}
 
-          <Select
-            sx={{ minWidth: 180 }}
-            onChange={handleWledHostChange}
-            disabled={hosts.length === 0 || currentMode === "view"}
-            value={wledHost}
-            MenuProps={{
-              PaperProps: {
-                sx: { maxWidth: "90vw", maxHeight: "40vh" },
-              },
-            }}
-          >
-            {hosts.map((host) => (
-              <MenuItem key={host.id} value={host.id}>
-                {host.url}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl variant="filled" sx={{ m: 1, minWidth: 120 }}>
+            <InputLabel>WLED Host</InputLabel>
+            <Select
+              sx={{ minWidth: 180 }}
+              onChange={handleWledHostChange}
+              disabled={hosts.length === 0 || currentMode === "view"}
+              value={wledHost}
+              MenuProps={{
+                PaperProps: {
+                  sx: { maxWidth: "90vw", maxHeight: "40vh" },
+                },
+              }}
+            >
+              {hosts.map((host) => (
+                <MenuItem key={host.id} value={host.id}>
+                  {host.url}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-          <Select
-            sx={{ minWidth: 180 }}
-            onChange={handleSegmentSetChange}
-            disabled={segmentSets.length === 0 || currentMode === "view"}
-            value={segmentSet}
-            MenuProps={{
-              PaperProps: {
-                sx: { maxWidth: "90vw", maxHeight: "40vh" },
-              },
-            }}
-          >
-            {segmentSets.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.name}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl variant="filled" sx={{ m: 1, minWidth: 120 }}>
+            <InputLabel>Segment Set</InputLabel>
+            <Select
+              sx={{ minWidth: 180 }}
+              onChange={handleSegmentSetChange}
+              disabled={segmentSets.length === 0 || currentMode === "view"}
+              value={segmentSet}
+              MenuProps={{
+                PaperProps: {
+                  sx: { maxWidth: "90vw", maxHeight: "40vh" },
+                },
+              }}
+            >
+              {segmentSets.map((s) => (
+                <MenuItem key={s.id} value={s.id}>
+                  {s.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <Button size="large" onClick={handleExecute}>
             Execute

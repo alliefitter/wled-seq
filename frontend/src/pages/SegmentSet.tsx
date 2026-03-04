@@ -5,7 +5,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   IconButton,
+  InputLabel,
   MenuItem,
   Select,
   type SelectChangeEvent,
@@ -23,7 +25,7 @@ import {
 import { Fragment } from "react/jsx-runtime";
 import { type GridRenderCellParams } from "@mui/x-data-grid";
 import { Delete } from "@mui/icons-material";
-import ReorderableGrid from "./ReorderableGrid.tsx";
+import ReorderableGrid from "../components/ReorderableGrid.tsx";
 import { toast } from "react-toastify";
 
 type SegmentDialogProps = {
@@ -136,7 +138,15 @@ function SegmentDialog({
   return (
     <Fragment>
       {buttonText && (
-        <Button variant="outlined" onClick={handleClickOpen}>
+        <Button
+          variant="text"
+          onClick={handleClickOpen}
+          sx={{
+            width: "max-content",
+            minWidth: "auto",
+            whiteSpace: "nowrap",
+          }}
+        >
           {buttonText}
         </Button>
       )}
@@ -348,27 +358,30 @@ function SegmentSet() {
             margin="dense"
             label="Name"
             type="text"
-            variant="outlined"
+            variant="filled"
             value={name}
             onChange={onNameChange}
+            sx={{ minWidth: 240 }}
           />
-          <Select
-            sx={{ minWidth: 180 }}
-            onChange={handleWledHostChange}
-            disabled={hosts.length === 0}
-            value={hostId}
-            MenuProps={{
-              PaperProps: {
-                sx: { maxWidth: "90vw", maxHeight: "40vh" },
-              },
-            }}
-          >
-            {hosts.map((host) => (
-              <MenuItem key={host.id} value={host.id}>
-                {host.url}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl variant="filled" sx={{ minWidth: 240 }}>
+            <InputLabel>WLED Host</InputLabel>
+            <Select
+              onChange={handleWledHostChange}
+              disabled={hosts.length === 0}
+              value={hostId}
+              MenuProps={{
+                PaperProps: {
+                  sx: { maxWidth: "90vw", maxHeight: "40vh" },
+                },
+              }}
+            >
+              {hosts.map((host) => (
+                <MenuItem key={host.id} value={host.id}>
+                  {host.url}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <SegmentDialog
             buttonText={"Add Segment"}
             addSegment={addSegment}
@@ -380,10 +393,26 @@ function SegmentSet() {
           direction="row"
           sx={{ display: "flex", justifyContent: "flex-end", width: "100%" }}
         >
-          <Button variant="outlined" onClick={() => navigate("/segmentSets")}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/segmentSets")}
+            sx={{
+              width: "max-content",
+              minWidth: "auto",
+              whiteSpace: "nowrap",
+            }}
+          >
             Cancel
           </Button>
-          <Button variant="contained" onClick={onSave}>
+          <Button
+            variant="contained"
+            onClick={onSave}
+            sx={{
+              width: "max-content",
+              minWidth: "auto",
+              whiteSpace: "nowrap",
+            }}
+          >
             Save
           </Button>
         </Stack>
@@ -393,6 +422,8 @@ function SegmentSet() {
         columns={columns}
         rows={segments}
         onRowsChange={onSegmentsChange}
+        hideFooter
+        sx={{ margin: "20px 0px" }}
       />
     </div>
   );

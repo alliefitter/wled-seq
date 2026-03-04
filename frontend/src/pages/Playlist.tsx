@@ -19,7 +19,7 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import ReorderableGrid from "./ReorderableGrid.tsx";
+import ReorderableGrid from "../components/ReorderableGrid.tsx";
 import { toast } from "react-toastify";
 import { Delete } from "@mui/icons-material";
 

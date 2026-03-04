@@ -4,15 +4,15 @@ import { AppBar, Box, CssBaseline, IconButton, Toolbar } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ToastContainer } from "react-toastify";
 import { SideBar } from "./components/Sidebar.tsx";
-import WledHostsGrid from "./components/WledHosts.tsx";
-import SequenceGrid from "./components/Sequences.tsx";
+import WledHostsGrid from "./pages/WledHosts.tsx";
+import SequenceGrid from "./pages/Sequences.tsx";
 import { useState } from "react";
-import Sequence from "./components/Sequence.tsx";
-import Editor from "./components/Editor.tsx";
-import PlaylistGrid from "./components/Playlists.tsx";
-import Playlist from "./components/Playlist.tsx";
-import SegmentSet from "./components/SegmentSet.tsx";
-import SegmentSetGrid from "./components/SegmentSets.tsx";
+import Sequence from "./pages/Sequence.tsx";
+import Editor from "./pages/Editor.tsx";
+import PlaylistGrid from "./pages/Playlists.tsx";
+import Playlist from "./pages/Playlist.tsx";
+import SegmentSet from "./pages/SegmentSet.tsx";
+import SegmentSetGrid from "./pages/SegmentSets.tsx";
 
 function App() {
   const [expanded, setExpanded] = useState(false);

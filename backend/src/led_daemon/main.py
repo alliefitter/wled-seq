@@ -1,14 +1,14 @@
 import signal
 from asyncio import (
     CancelledError,
+    TaskGroup,
     all_tasks,
-    create_task,
     current_task,
     gather,
     new_event_loop,
     set_event_loop,
 )
-from logging import getLogger
+from logging import WARNING, getLogger
 from logging.config import dictConfig
 
 import yaml
@@ -23,40 +23,40 @@ from lib.model.sequence import (
 )
 from lib.settings import get_settings
 
+getLogger("httpx").setLevel(WARNING)
 logger = getLogger(__name__)
 settings = get_settings()
 
 
-async def receive_messages():
-    service = Service()
-    async with Client(settings.mqtt_url) as client:
+async def receive_messages(service: Service):
+    async with Client(settings.mqtt_url) as client, TaskGroup() as task_group:
         await client.subscribe("wled-seq/#")
         async for message in client.messages:
             logger.info(f"Received message: {message.topic}")
             match str(message.topic):
                 case "wled-seq/execute":
-                    create_task(
+                    task_group.create_task(
                         service.execute_sequence(
                             SequenceMessage.model_validate_json(message.payload)
                         )
                     )
 
                 case "wled-seq/random":
-                    create_task(
+                    task_group.create_task(
                         service.execute_random(
                             RandomSequenceMessage.model_validate_json(message.payload)
                         )
                     )
 
                 case "wled-seq/playlist":
-                    create_task(
+                    task_group.create_task(
                         service.execute_playlist(
                             PlaylistMessage.model_validate_json(message.payload)
                         )
                     )
 
                 case "wled-seq/stop":
-                    create_task(
+                    task_group.create_task(
                         service.stop(
                             StopOrPowerOffMessage.model_validate_json(message.payload).host
                         )
@@ -64,14 +64,6 @@ async def receive_messages():
 
                 case _:
                     raise ValueError(f"Unknown topic: {message.topic}")
-
-
-async def listen():
-    try:
-        await receive_messages()
-
-    except CancelledError:
-        pass
 
 
 async def shutdown():
@@ -85,6 +77,7 @@ def main():
     with open("./logging.yaml", "rt") as f:
         dictConfig(yaml.safe_load(f))
 
+    service = Service()
     loop = new_event_loop()
     set_event_loop(loop)
 
@@ -93,11 +86,12 @@ def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop.set_result, None)
 
-    loop.create_task(listen())
+    loop.create_task(receive_messages(service))
 
     try:
         loop.run_until_complete(stop)
     finally:
+        loop.run_until_complete(service.shutdown())
         loop.run_until_complete(shutdown())
         loop.close()
 

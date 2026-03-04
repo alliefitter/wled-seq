@@ -36,10 +36,14 @@ function PanelList({
   segments,
 }: PanelListProps) {
   const [data, setData] = useState<{ [key: string]: unknown }[]>(value);
+  const [keys, setKeys] = useState<string[]>(
+    value.map(() => crypto.randomUUID()),
+  );
 
   const addPanel = () => {
     const newData = field === "seg" ? { segments: [] } : {};
     setData((prev) => [...prev, newData]);
+    setKeys((prev) => [...prev, crypto.randomUUID()]);
   };
 
   useEffect(() => {
@@ -82,7 +86,7 @@ function PanelList({
         }}
       >
         {field === "seg"
-          ? value.map((d, i) => {
+          ? data.map((d, i) => {
               const updateData = (value: { [key: string]: unknown }) => {
                 setData((prev) => {
                   const copy = [...prev];
@@ -109,7 +113,7 @@ function PanelList({
 
               return (
                 <Paper
-                  key={i}
+                  key={keys[i]}
                   elevation={3}
                   sx={{
                     p: 2,
@@ -130,11 +134,10 @@ function PanelList({
                           backgroundColor: "transparent",
                         },
                       }}
-                      onClick={() =>
-                        setData((prev: { [key: string]: unknown }[]) =>
-                          prev.filter((_, n) => i !== n),
-                        )
-                      }
+                      onClick={() => {
+                        setData((prev) => prev.filter((_, n) => n !== i));
+                        setKeys((prev) => prev.filter((_, n) => n !== i));
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>
@@ -173,7 +176,7 @@ function PanelList({
 
               return (
                 <Paper
-                  key={i}
+                  key={keys[i]}
                   elevation={3}
                   sx={{
                     p: 2,
@@ -194,9 +197,10 @@ function PanelList({
                           backgroundColor: "transparent",
                         },
                       }}
-                      onClick={() =>
-                        setData((prev) => [...prev.filter((_, n) => n !== i)])
-                      }
+                      onClick={() => {
+                        setData((prev) => prev.filter((_, n) => n !== i));
+                        setKeys((prev) => prev.filter((_, n) => n !== i));
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>

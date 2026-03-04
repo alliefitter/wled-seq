@@ -20,14 +20,16 @@ class LedSequence(BaseModel):
 
     repeat: bool = Field(False, description="Repeat the sequence until changed.")
     random: bool = Field(False, description="Execute items in a random order.")
-    elements: list[WledSequenceElement] = Field(default_factory=list, description="An array of sequence elements.")
+    elements: list[WledSequenceElement] = Field(
+        default_factory=list, description="An array of sequence elements."
+    )
 
 
 class SequenceMessage(BaseModel):
     name: str
     sequence: LedSequence
     host: AnyUrl
-    segment_set_id: UUID4 | None = None
+    segment_set_id: UUID4 | None
 
 
 class RandomSequenceMessage(BaseModel):

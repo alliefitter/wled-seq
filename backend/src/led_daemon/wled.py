@@ -1,9 +1,8 @@
-from asyncio import run, sleep
+from asyncio import Event, Task, create_task, sleep
 from logging import getLogger
 from random import shuffle
-from threading import Event, Thread
 from time import time
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 from httpx import AsyncClient, HTTPError
@@ -14,64 +13,69 @@ from lib.model.wled import SegItem, WledState
 logger = getLogger(__name__)
 
 
-class SequenceThread(Thread):
-    def __init__(self, event: Event, target: Callable):
-        super().__init__()
-        self.event = event
-        self.target = target
-
-    def run(self):
-        while not self.event.is_set():
-            self.target()
-
-
 class Wled:
-    thread: SequenceThread | None
     event: Event
 
     def __init__(self, host: str):
         self.host = host[:-1]
-        self.thread = None
+        self.task: Task | None = None
         self.previous_segment_set: UUID | None = None
         self.event = Event()
 
     async def execute(self, sequence: LedSequence, segment_set_id: UUID | None):
-        await self.clear_thread_if_alive()
+        await self.clear_task_if_alive()
         if segment_set_id is None or segment_set_id != self.previous_segment_set:
             await self.clear_segments()
 
         self.previous_segment_set = segment_set_id
         if sequence.repeat:
-            self.thread = SequenceThread(self.event, lambda: run(self.run_sequence(sequence)))
-            self.thread.start()
+            self.task = create_task(self.repeat_sequence(sequence))
         else:
             await self.run_sequence(sequence)
 
-    async def clear_thread_if_alive(self):
-        thread = self.thread
-        self.kill()
-        if thread and thread.is_alive():
-            thread.join()
-        else:
-            await sleep(0.06)
-        self.event.clear()
+    async def clear_task_if_alive(self):
+        if self.task and not self.task.done():
+            self.event.set()
+
+            self.task.cancel()
+
+            try:
+                await self.task
+            except:
+                pass
+
+            self.task = None
+            self.event.clear()
 
     async def clear_segments(self):
-        async with AsyncClient(base_url=self.host) as client:
-            response = await self._send_request("/json/state", "GET")
-            body = WledState.model_validate_json(response.text)
-            new_segments = WledState(
-                seg=[
-                    SegItem(id=0, start=0, stop=max(body.seg, key=lambda s: s.stop).stop),
-                    *[SegItem(id=s.id, start=0, stop=0) for s in body.seg[1:]],
-                ],
-            )
-            await self._send_request(
-                "/json/state", "POST", new_segments.model_dump(mode="json", exclude_unset=True)
-            )
+        response = await self._send_request("/json/state", "GET")
+        body = WledState.model_validate_json(response.text)
+        new_segments = WledState(
+            tt=0,
+            seg=[
+                SegItem(
+                    id=0,
+                    start=0,
+                    stop=max(body.seg, key=lambda s: s.stop).stop,
+                    col=[[0, 0, 0]],
+                ),
+                *[SegItem(id=s.id, start=0, stop=0) for s in body.seg[1:]],
+            ],
+        )
+        await self._send_request(
+            "/json/state", "POST", new_segments.model_dump(mode="json", exclude_unset=True)
+        )
 
     def kill(self):
         self.event.set()
+
+    async def repeat_sequence(self, sequence: LedSequence):
+        try:
+            while not self.event.is_set():
+                await self.run_sequence(sequence)
+
+        except:
+            pass
 
     async def run_sequence(self, sequence: LedSequence):
         if sequence.random:
@@ -103,12 +107,16 @@ class Wled:
             if self.should_kill():
                 break
 
-            await sleep(0.05)
+            await sleep(0.005)
+
+    async def shutdown(self):
+        await self.client.aclose()
 
     async def _send_request(self, path: str, method: str, json_data: dict[str, Any] | None = None):
+        response = None
+        retry = True
+        retries = 0
         async with AsyncClient(base_url=self.host) as client:
-            retry = True
-            retries = 0
             while retry and retries < 5:
                 try:
                     response = await client.request(
@@ -117,21 +125,22 @@ class Wled:
                         json=json_data,
                         headers={"Content-Type": "application/json"},
                     )
-                except HTTPError:
+                except HTTPError as e:
                     retry = True
                     retries += 1
                     logger.error(
                         "Retryable WLED Error",
+                        exc_info=e,
                         extra={
-                            "response_text": response.text,
-                            "status_code": response.status_code,
+                            "response_text": response.text if response else None,
+                            "status_code": response.status_code if response else None,
                         },
                     )
 
                 else:
                     retry = False
 
-        if response.is_error:
+        if response and response.is_error:
             logger.error(
                 "WLED Error",
                 extra={

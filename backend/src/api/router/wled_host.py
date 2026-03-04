@@ -10,6 +10,7 @@ from lib.model.api import (
     CreateResponse,
     EffectsItem,
     ExecuteRandomRequest,
+    ExecuteSequenceRequest,
     SegmentSetResponse,
     SequenceListItem,
     WledHostRequest,
@@ -22,7 +23,7 @@ settings = get_settings()
 logger = getLogger()
 
 
-@router.post("")
+@router.post("", status_code=201)
 async def create_host(
     body: WledHostRequest, service: Annotated[WledHostService, Depends()]
 ) -> CreateResponse:
@@ -33,14 +34,14 @@ async def create_host(
     return CreateResponse(id=service.create_host(body))
 
 
-@router.put("/{host_id}")
+@router.put("/{host_id}", status_code=204)
 async def update_host(
     host_id: UUID, body: WledHostRequest, service: Annotated[WledHostService, Depends()]
 ) -> None:
     service.update_host(host_id, body)
 
 
-@router.delete("/{host_id}")
+@router.delete("/{host_id}", status_code=204)
 async def delete_host(host_id: UUID, service: Annotated[WledHostService, Depends()]) -> None:
     service.delete_host(host_id)
 
@@ -77,12 +78,12 @@ async def list_host_segment_sets(
     ]
 
 
-@router.post("/{host_id}/execute-random")
+@router.post("/{host_id}/execute-random", status_code=204)
 async def execute_random(
     host_id: UUID,
     body: ExecuteRandomRequest,
     service: Annotated[WledHostService, Depends()],
-):
+) -> None:
     await service.execute_random(host_id, body)
 
 
@@ -121,11 +122,18 @@ async def get_host_palettes(
     return await service.get_host_palettes(host_id)
 
 
-@router.post("/{host_id}/stop")
+@router.post("/{host_id}/stop", status_code=204)
 async def stop(host_id: UUID, service: Annotated[WledHostService, Depends()]) -> None:
     await service.stop(host_id)
 
 
-@router.post("/{host_id}/power-off")
+@router.post("/{host_id}/power-off", status_code=204)
 async def power_off(host_id: UUID, service: Annotated[WledHostService, Depends()]) -> None:
     await service.power_off(host_id)
+
+
+@router.post("/execute", status_code=204)
+async def execute(
+    body: ExecuteSequenceRequest, service: Annotated[WledHostService, Depends()]
+) -> None:
+    await service.execute(body)

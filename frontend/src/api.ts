@@ -1,6 +1,10 @@
 import type {
   CreateResponse,
   LedSequence,
+  ListPlaylistFilters,
+  ListResponse,
+  ListSegmentSetFilters,
+  ListSequenceFilters,
   PlaylistResponse,
   Segment,
   SegmentSetResponse,
@@ -44,13 +48,23 @@ export const powerOffWledHost = async (hostId: string): Promise<void> => {
 };
 
 export const listSequences = async (
-  hostId: string | null = null,
-): Promise<SequenceListItem[]> => {
-  let url = `${API_URL}/sequence`;
-  if (hostId) {
-    url = `${url}?hostId=${hostId}`;
+  filters: ListSequenceFilters,
+  limit: number,
+  cursor: string | null = null,
+): Promise<ListResponse<SequenceListItem[]>> => {
+  const url = `${API_URL}/sequence`;
+  const params = new URLSearchParams();
+  params.append("size", limit.toString());
+  if (cursor) {
+    params.append("cursor", cursor);
   }
-  const response = await fetch(url, {
+  if (filters?.hosts) {
+    filters.hosts.forEach((h) => params.append("hostId", h));
+  }
+  if (filters?.name) {
+    params.append("name", filters.name);
+  }
+  const response = await fetch(`${url}?${params}`, {
     method: "GET",
   });
   await handleError(response);
@@ -60,6 +74,7 @@ export const listSequences = async (
 export const executeSequence = async (
   hostId: string,
   sequence: LedSequence,
+  segmentSetId: string,
 ): Promise<void> => {
   const response = await fetch(`${API_URL}/execute`, {
     method: "POST",
@@ -69,13 +84,14 @@ export const executeSequence = async (
     body: JSON.stringify({
       host_id: hostId,
       sequence: sequence,
+      segment_set_id: segmentSetId,
     }),
   });
   await handleError(response);
 };
 
 export const executeSequenceById = async (id: string) => {
-  const response = await fetch(`${API_URL}/execute/by-id/${id}`, {
+  const response = await fetch(`${API_URL}/sequence/${id}/execute`, {
     method: "post",
   });
   await handleError(response);
@@ -245,8 +261,20 @@ export const getPlaylist = async (id: string): Promise<PlaylistResponse> => {
   return response.json();
 };
 
-export const listPlaylists = async (): Promise<PlaylistResponse[]> => {
-  const response = await fetch(`${API_URL}/playlist`);
+export const listPlaylists = async (
+  filters: ListPlaylistFilters,
+  limit: number,
+  cursor: string | null,
+): Promise<ListResponse<PlaylistResponse[]>> => {
+  const params = new URLSearchParams();
+  params.append("size", limit.toString());
+  if (cursor) {
+    params.append("cursor", cursor);
+  }
+  if (filters.name) {
+    params.append("name", filters.name);
+  }
+  const response = await fetch(`${API_URL}/playlist?${params}`);
   await handleError(response);
 
   return response.json();
@@ -308,8 +336,23 @@ export const getSegmentSet = async (
   return response.json();
 };
 
-export const listSegmentSets = async (): Promise<SegmentSetResponse[]> => {
-  const response = await fetch(`${API_URL}/segment-set`);
+export const listSegmentSets = async (
+  filters: ListSegmentSetFilters,
+  limit: number,
+  cursor: string | null,
+): Promise<ListResponse<SegmentSetResponse[]>> => {
+  const params = new URLSearchParams();
+  params.append("size", limit.toString());
+  if (cursor) {
+    params.append("cursor", cursor);
+  }
+  if (filters?.hosts) {
+    filters.hosts.forEach((h) => params.append("hostId", h));
+  }
+  if (filters?.name) {
+    params.append("name", filters.name);
+  }
+  const response = await fetch(`${API_URL}/segment-set?${params}`);
   await handleError(response);
 
   return response.json();

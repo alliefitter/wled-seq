@@ -10,7 +10,13 @@ from sqlalchemy.orm import Session
 
 from api.led_daemon_client import LedDaemonClient
 from api.orm import SegmentSetOrm, SequenceOrm, WledHostOrm, get_db
-from lib.model.api import EffectField, EffectsItem, ExecuteRandomRequest, WledHostRequest
+from lib.model.api import (
+    EffectField,
+    EffectsItem,
+    ExecuteRandomRequest,
+    ExecuteSequenceRequest,
+    WledHostRequest,
+)
 from lib.model.sequence import LedSequence, WledSequenceElement
 from lib.model.wled import On, WledState
 
@@ -48,6 +54,15 @@ class WledHostService:
             raise HTTPException(404, f"Host {host_id} does not exist")
 
         await self.led_daemon.publish_random(host.id, body.sleep_time, AnyUrl(host.url))
+
+    async def execute(self, body: ExecuteSequenceRequest):
+        host = self.db.query(WledHostOrm).filter_by(id=body.host_id).one_or_none()
+        if not host:
+            raise HTTPException(404, "host not found")
+
+        await self.led_daemon.publish_execute(
+            "Test", AnyUrl(host.url), body.sequence, body.segment_set_id
+        )
 
     def get_host(
         self, host_id: UUID | None = None, url: AnyUrl | None = None
@@ -164,7 +179,7 @@ class WledHostService:
         if not host:
             raise HTTPException(404, f"Host {host_id} does not exist")
 
-        await self.led_daemon.execute(
+        await self.led_daemon.publish_execute(
             "Power Off",
             AnyUrl(host.url),
             LedSequence(
@@ -172,6 +187,7 @@ class WledHostService:
                 random=False,
                 elements=[WledSequenceElement(state=WledState(on=On(False)))],
             ),
+            segment_set_id=None,
         )
 
     async def stop(self, host_id: UUID):
