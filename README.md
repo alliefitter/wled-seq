@@ -82,8 +82,7 @@ WLED devices over HTTP — keeping long-running sequence execution decoupled fro
 
 ```bash
 git clone https://github.com/your-username/wled-seq.git
-cd wled-seq
-cp .env.example .env          # review and edit as needed
+cd wled-seq      # review and edit as needed
 docker compose --profile wled-seq up -d
 ```
 
