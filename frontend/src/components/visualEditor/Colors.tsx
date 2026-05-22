@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, IconButton, Button, Tooltip } from "@mui/material";
+import { Box, Button, IconButton, Tooltip, Typography } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
 import RgbwTextField from "./RgbwTextField.tsx";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
@@ -57,9 +57,11 @@ function Colors({
         <Tooltip title={schema.description}>
           <HelpOutlineIcon fontSize="small" />
         </Tooltip>
-        <IconButton onClick={removeSelf} size="small" sx={{ p: 0.5 }}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        {!readOnly && (
+          <IconButton onClick={removeSelf} size="small" sx={{ p: 0.5 }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
       </Box>
       {colorData.map((data, index) => {
         const onChange = (value: number[]) => {
@@ -86,7 +88,7 @@ function Colors({
                 onClick={() => removeField(index)}
                 size="small"
                 sx={{
-                  position: "absolute",
+                  poSsition: "absolute",
                   top: 0,
                   right: 0,
                   padding: "2px",

@@ -188,7 +188,7 @@ function Panel({
           <Typography variant="h6" sx={{ mb: 0 }}>
             {omitTitle === true ? "" : title || schema.title}
           </Typography>
-          {copySelf && (
+          {copySelf && !readOnly && (
             <IconButton
               size="small"
               sx={{

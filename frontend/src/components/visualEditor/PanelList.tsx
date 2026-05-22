@@ -160,7 +160,7 @@ function PanelList({
                     palettes={palettes}
                     references={references}
                     segments={segments}
-                    copySelf={copySelf}
+                    copySelf={readOnly ? undefined : copySelf}
                   />
                 </Paper>
               );
@@ -229,7 +229,7 @@ function PanelList({
                     palettes={palettes}
                     references={references}
                     segments={segments}
-                    copySelf={field === "elements" ? copySelf : undefined}
+                    copySelf={field === "elements" && !readOnly ? copySelf : undefined}
                   />
                 </Paper>
               );
@@ -243,7 +243,7 @@ function PanelList({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            cursor: "pointer",
+            cursor: readOnly ? "default" : "pointer",
             transition: "background-color 0.2s ease",
             "&:hover": !readOnly
               ? {

@@ -4,7 +4,7 @@ A web-based tool for creating and running LED sequences on [WLED](https://kno.wl
 layouts, build sequences of LED states with precise timing, group them into playlists, and trigger execution — all from
 a browser.
 
-![screenshot placeholder](docs/screenshot.png)
+![Visual Editor](share/img/visual_editor.png)
 
 https://github.com/user-attachments/assets/ae3fa3d5-8cea-4f2e-9891-685d02b5018e
 
@@ -49,7 +49,8 @@ sequence composition, and removes the constraints of device storage.
 - **Segment sets** — save named LED segment layouts per device and reuse them across sequences
 - **Visual sequence editor** — configure per-segment effects, palettes, colors, and timing without touching JSON
 - **YAML editor** — drop into raw YAML for full control; validated against the schema in real time
-- **Sequence composition** — embed other sequences by reference so a shared sub-sequence can be reused and updated in one place
+- **Sequence composition** — embed other sequences by reference so a shared sub-sequence can be reused and updated in
+  one place
 - **Playlists** — chain sequences together with per-track timing overrides, shuffle, and repeat
 - **Random mode** — continuously cycle through sequences for a host at a configurable interval
 

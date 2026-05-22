@@ -5,7 +5,7 @@ import {
   type SyntheticEvent,
   useEffect,
   useRef,
-  useState,
+  useState
 } from "react";
 import type { Effects } from "../../api.ts";
 import type { JSONSchema7 } from "json-schema";
@@ -20,7 +20,7 @@ import {
   type SelectChangeEvent,
   Stack,
   TextField,
-  Typography,
+  Typography
 } from "@mui/material";
 import Field from "./Field.tsx";
 import CloseIcon from "@mui/icons-material/Close";
@@ -320,6 +320,7 @@ function SegmentPanel({
               ],
             },
           }}
+          disabled={readOnly}
         />
         {availableFields.length && !readOnly ? (
           <FormControl sx={{ display: "flex", flexDirection: "row" }}>
