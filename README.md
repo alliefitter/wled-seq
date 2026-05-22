@@ -8,6 +8,8 @@ a browser.
 
 https://github.com/user-attachments/assets/ae3fa3d5-8cea-4f2e-9891-685d02b5018e
 
+[More examples here!](https://imgur.com/gallery/mgex-unicorn-with-custom-leds-RwVflhY)
+
 ## Why not just use WLED presets?
 
 WLED has a built-in preset and playlist system. You can store LED states as presets, then

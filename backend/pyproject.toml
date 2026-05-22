@@ -5,7 +5,7 @@ description = ""
 authors = [
     { name = "Allie Fitter", email = "fitterj@gmail.com" }
 ]
-readme = "README.md"
+readme = "../README.md"
 requires-python = ">=3.13,<4.0"
 dependencies = [
     "aiomqtt (>=2.4.0,<3.0.0)",
