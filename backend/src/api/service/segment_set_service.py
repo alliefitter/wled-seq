@@ -38,7 +38,7 @@ class SegmentSetService:
     def delete_segment_set(self, segment_set_id: UUID) -> None:
         segment_set = self.db.query(SegmentSetOrm).filter_by(id=segment_set_id).one_or_none()
         if not segment_set:
-            raise HTTPException(404, f"Segment set {segment_set_id}not found")
+            raise HTTPException(404, f"Segment set {segment_set_id} not found")
 
         self.db.delete(segment_set)
         self.db.commit()
@@ -80,7 +80,7 @@ class SegmentSetService:
     def update_segment_set(self, segment_set_id: UUID, body: SegmentSetRequest) -> None:
         segment_set = self.db.query(SegmentSetOrm).filter_by(id=segment_set_id).one_or_none()
         if not segment_set:
-            raise HTTPException(409, f"Segment set {segment_set_id} does not exist.")
+            raise HTTPException(404, f"Segment set {segment_set_id} does not exist.")
 
         segment_set.host_id = body.host_id
         segment_set.name = body.name

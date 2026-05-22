@@ -40,45 +40,47 @@ class Service:
                 "track_time": message.track_time,
             },
         )
-        was_killed = False
-        tracks = iter(shuffle(message.tracks) if message.shuffle else message.tracks)
         async with AsyncClient(base_url=str(message.base_url)) as client:
-            for track in tracks:
-                sequence = await self._get_sequence(client, track.sequence_id, message.base_url)
-                sleep_time = track.overrides.track_time or message.track_time
-                if track.overrides.repeat is not None:
-                    sequence.sequence.repeat = track.overrides.repeat
+            while True:
+                was_killed = False
+                tracks = shuffle(message.tracks) if message.shuffle else message.tracks
+                for track in tracks:
+                    sequence = await self._get_sequence(client, track.sequence_id, message.base_url)
+                    sleep_time = track.overrides.track_time or message.track_time
+                    if track.overrides.repeat is not None:
+                        sequence.sequence.repeat = track.overrides.repeat
 
-                if sequence.sequence.repeat and not sleep_time:
-                    sleep_time = 300
+                    if sequence.sequence.repeat and not sleep_time:
+                        sleep_time = 300
 
-                sequence = await self._get_sequence(client, track.sequence_id, message.base_url)
-                wled = self.get_client(sequence.host)
-                if wled.should_kill():
-                    was_killed = True
+                    wled = self.get_client(sequence.host)
+                    if wled.should_kill():
+                        was_killed = True
+                        break
+                    await wled.clear_task_if_alive()
+
+                    logger.info(
+                        f"Executing sequence {sequence.name}",
+                        extra={
+                            "host": sequence.host,
+                            "len": len(sequence.sequence.elements),
+                            "random": sequence.sequence.random,
+                            "repeat": sequence.sequence.repeat,
+                        },
+                    )
+                    await wled.execute(sequence.sequence, sequence.segment_set_id)
+                    if sleep_time:
+                        logger.info("Sleeping...", extra={"sleep_time": sleep_time})
+                        await wled.sleep(sleep_time)
+
+                    if wled.should_kill():
+                        was_killed = True
+                        break
+
+                if not message.repeat or was_killed:
                     break
-                await wled.clear_task_if_alive()
 
-                logger.info(
-                    f"Executing sequence {sequence.name}",
-                    extra={
-                        "host": sequence.host,
-                        "len": len(sequence.sequence.elements),
-                        "random": sequence.sequence.random,
-                        "repeat": sequence.sequence.repeat,
-                    },
-                )
-                await wled.execute(sequence.sequence, sequence.segment_set_id)
-                if sleep_time:
-                    logger.info("Sleeping...", extra={"sleep_time": sleep_time})
-                    await wled.sleep(sleep_time)
 
-                if wled.should_kill():
-                    was_killed = True
-                    break
-
-        if message.repeat and not was_killed:
-            await self.execute_playlist(message)
 
     async def execute_sequence(self, message: SequenceMessage):
         logger.info(
@@ -143,7 +145,9 @@ class Service:
                     "status_code": response.status_code,
                 },
             )
-            raise Exception
+            raise RuntimeError(
+                f"Failed to fetch sequence {sequence_id}: HTTP {response.status_code}"
+            )
 
         sequence = SequenceResponse.model_validate(response.json())
         sequence.sequence = await prepare(sequence.sequence, base_url)

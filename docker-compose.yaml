@@ -11,7 +11,7 @@ services:
       - "8080:8000"
     environment:
       WLED_SEQ_MQTT_URL: mqtt
-      WLED_SEQ_DB_URL: sqlite:///wled-seq.db
+      WLED_SEQ_DB_URL: postgresql://postgres:postgres@postgres:5432/wled_seq
   led-daemon:
     user: 1000:1000
     profiles:
@@ -24,7 +24,7 @@ services:
       dockerfile: ../share/docker/led-daemon.Dockerfile
     environment:
       WLED_SEQ_MQTT_URL: mqtt
-      WLED_SEQ_DB_URL: postgresql://postgres:postgres@postgres:39344/wled_seq
+      WLED_SEQ_DB_URL: postgresql://postgres:postgres@postgres:5432/wled_seq
   frontend:
     user: 1000:1000
     profiles:

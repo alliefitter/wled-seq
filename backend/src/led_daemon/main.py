@@ -1,6 +1,6 @@
 import signal
+from pathlib import Path
 from asyncio import (
-    CancelledError,
     TaskGroup,
     all_tasks,
     current_task,
@@ -10,6 +10,7 @@ from asyncio import (
 )
 from logging import WARNING, getLogger
 from logging.config import dictConfig
+from typing import Any, Coroutine
 
 import yaml
 from aiomqtt import Client
@@ -28,6 +29,14 @@ logger = getLogger(__name__)
 settings = get_settings()
 
 
+def create_task(task_group: TaskGroup, coro: Coroutine[Any, Any, None]):
+    try:
+        task_group.create_task(coro)
+
+    except Exception as e:
+        logger.error("Task failed", exc_info=e)
+
+
 async def receive_messages(service: Service):
     async with Client(settings.mqtt_url) as client, TaskGroup() as task_group:
         await client.subscribe("wled-seq/#")
@@ -35,35 +44,39 @@ async def receive_messages(service: Service):
             logger.info(f"Received message: {message.topic}")
             match str(message.topic):
                 case "wled-seq/execute":
-                    task_group.create_task(
+                    create_task(
+                        task_group,
                         service.execute_sequence(
                             SequenceMessage.model_validate_json(message.payload)
-                        )
+                        ),
                     )
 
                 case "wled-seq/random":
-                    task_group.create_task(
+                    create_task(
+                        task_group,
                         service.execute_random(
                             RandomSequenceMessage.model_validate_json(message.payload)
-                        )
+                        ),
                     )
 
                 case "wled-seq/playlist":
-                    task_group.create_task(
+                    create_task(
+                        task_group,
                         service.execute_playlist(
                             PlaylistMessage.model_validate_json(message.payload)
-                        )
+                        ),
                     )
 
                 case "wled-seq/stop":
-                    task_group.create_task(
+                    create_task(
+                        task_group,
                         service.stop(
                             StopOrPowerOffMessage.model_validate_json(message.payload).host
-                        )
+                        ),
                     )
 
                 case _:
-                    raise ValueError(f"Unknown topic: {message.topic}")
+                    logger.warning(f"Unknown topic: {message.topic}")
 
 
 async def shutdown():
@@ -74,7 +87,8 @@ async def shutdown():
 
 
 def main():
-    with open("./logging.yaml", "rt") as f:
+    logging_config = Path(__file__).parent.parent.parent / "logging.yaml"
+    with open(logging_config, "rt") as f:
         dictConfig(yaml.safe_load(f))
 
     service = Service()

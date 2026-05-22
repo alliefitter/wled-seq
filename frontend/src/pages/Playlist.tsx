@@ -19,6 +19,7 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
+import NumberTextField from "../components/NumberTextField.tsx";
 import ReorderableGrid from "../components/ReorderableGrid.tsx";
 import { toast } from "react-toastify";
 import { Delete } from "@mui/icons-material";
@@ -99,7 +100,7 @@ function Playlist() {
         setIsLoading(false);
       });
     }
-    listSequences().then((s) => setSequences(s));
+    listSequences({ hosts: [] }, 100).then((s) => setSequences(s.items));
   }, [params, setSequences]);
   console.log(tracks);
   return (
@@ -115,10 +116,9 @@ function Playlist() {
             value={name}
             onChange={onNameChange}
           />
-          <TextField
+          <NumberTextField
             margin="dense"
             label="Track Time"
-            type="number"
             variant="standard"
             value={trackTime || ""}
             onChange={onTrackTimeChange}
@@ -214,10 +214,9 @@ function Playlist() {
                       }}
                     />
                   </Tooltip>
-                  <TextField
+                  <NumberTextField
                     margin="dense"
                     label="Track Time"
-                    type="number"
                     fullWidth
                     size="small"
                     sx={{ margin: "0px" }}

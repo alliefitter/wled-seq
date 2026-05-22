@@ -485,14 +485,16 @@ function Editor({ id, mode }: EditorProps) {
     <Box
       sx={{
         width: "100%",
-        overflowX: "auto",
-        WebkitOverflowScrolling: "touch",
-        minWidth: 0, // ✅ critical (outer container inside flex parent)
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Box
         sx={{
-          position: "relative",
+          position: "sticky",
+          top: 0,
+          zIndex: (theme) => theme.zIndex.appBar - 1,
           width: "100%",
           overflowX: "auto",
           overflowY: "hidden",
@@ -500,6 +502,8 @@ function Editor({ id, mode }: EditorProps) {
           flexShrink: 0,
           minWidth: 0,
           bgcolor: "background.default",
+          boxShadow: (theme) => theme.shadows[2],
+          clipPath: "inset(0 0 -20px 0)",
         }}
       >
         <Box

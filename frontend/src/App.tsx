@@ -70,7 +70,7 @@ function App() {
               sx={{
                 flex: "1 1 auto",
                 minWidth: 0,
-                overflowX: "hidden",
+                overflowX: "clip",
                 pb: { xs: "60px", sm: 0 }, // ✅ reserve space equal to sidebar height
               }}
             >

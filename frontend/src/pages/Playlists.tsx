@@ -15,7 +15,7 @@ import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import Table from "../components/Table.tsx";
 
 function PlaylistGrid() {
-  const [filters, setFilters] = useState<ListPlaylistFilters>({ hosts: [] });
+  const [filters, setFilters] = useState<ListPlaylistFilters>({});
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));

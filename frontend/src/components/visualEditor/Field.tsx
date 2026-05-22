@@ -6,6 +6,7 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
+import NumberTextField from "../NumberTextField.tsx";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CloseIcon from "@mui/icons-material/Close";
 import { type ChangeEvent, useEffect, useState } from "react";
@@ -35,7 +36,7 @@ function Field({
     switch (schema.type) {
       case "number":
       case "integer":
-        setData(Number(event.target.value));
+        setData(event.target.value === "" ? undefined : Number(event.target.value));
         break;
       case "boolean":
         setData(event.target.checked);
@@ -81,12 +82,11 @@ function Field({
     ["number", "integer"].includes(schema.type)
   ) {
     field = (
-      <TextField
+      <NumberTextField
         variant="outlined"
-        type="number"
         label={labelOverride || schema.title}
         onChange={onChange}
-        value={data}
+        value={data ?? ""}
         disabled={readOnly}
       />
     );

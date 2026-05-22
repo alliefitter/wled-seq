@@ -19,20 +19,23 @@ const SideBar = ({ expanded }: Props) => {
 
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         display: "flex",
         flexDirection: { xs: "row", sm: "column" },
         alignItems: "center",
-        position: { xs: "fixed", sm: "static" },
+        position: { xs: "fixed", sm: "sticky" },
+        top: { xs: "auto", sm: 0 },
         bottom: { xs: 0, sm: "auto" },
         left: 0,
+        alignSelf: { sm: "flex-start" },
         width: { xs: "100%", sm: "auto" },
         height: { xs: 60, sm: "100vh" },
         p: { xs: "8px 12px", sm: "2vh" },
         bgcolor: "background.paper",
-        boxShadow: { xs: "0 -2px 6px rgba(0,0,0,0.2)", sm: "none" },
+        boxShadow: theme.shadows[2],
+        clipPath: { xs: "inset(-20px 0 0 0)", sm: "inset(0 -20px 0 0)" },
         zIndex: 1100,
-      }}
+      })}
     >
       <Box
         sx={{

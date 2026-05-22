@@ -7,11 +7,14 @@ tasks:
     cmd: docker compose down
 
   build:
+    preconditions:
+      - sh: '[ -n "{{.REGISTRY}}" ]'
+        msg: "Registry must be provided."
     cmds:
       - docker compose -f docker-compose.yaml --profile wled-seq build
-      - docker image tag wled_seq-api:latest horde.home:5000/wled-seq-api:latest
-      - docker image tag wled_seq-frontend:latest horde.home:5000/wled-seq-frontend:latest
-      - docker image tag wled_seq-led-daemon:latest horde.home:5000/wled-seqd:latest
-      - docker push horde.home:5000/wled-seq-api:latest
-      - docker push horde.home:5000/wled-seq-frontend:latest
-      - docker push horde.home:5000/wled-seqd:latest
+      - docker image tag wled_seq-api:latest {{.REGISTRY}}/wled-seq-api:latest
+      - docker image tag wled_seq-frontend:latest {{.REGISTRY}}/wled-seq-frontend:latest
+      - docker image tag wled_seq-led-daemon:latest {{.REGISTRY}}/wled-seqd:latest
+      - docker push {{.REGISTRY}}/wled-seq-api:latest
+      - docker push {{.REGISTRY}}/wled-seq-frontend:latest
+      - docker push {{.REGISTRY}}/wled-seqd:latest

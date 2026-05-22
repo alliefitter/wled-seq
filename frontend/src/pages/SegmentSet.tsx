@@ -14,6 +14,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import NumberTextField from "../components/NumberTextField.tsx";
 import { type ChangeEvent, type MouseEvent, useEffect, useState } from "react";
 import type { Segment, WledHostResponse } from "../types/api";
 import {
@@ -67,25 +68,25 @@ function SegmentDialog({
     setName(event.target.value);
   };
   const onStartChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStart(Number(event.target.value));
+    setStart(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onStopChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStop(Number(event.target.value));
+    setStop(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onStartYChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStartY(Number(event.target.value));
+    setStartY(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onStopYChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setStopY(Number(event.target.value));
+    setStopY(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onLengthChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setLength(Number(event.target.value));
+    setLength(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onGroupingChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setGrouping(Number(event.target.value));
+    setGrouping(event.target.value === "" ? undefined : Number(event.target.value));
   };
   const onSpacingChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSpacing(Number(event.target.value));
+    setSpacing(event.target.value === "" ? undefined : Number(event.target.value));
   };
 
   const handleClickOpen = (event: MouseEvent<HTMLButtonElement>) => {
@@ -163,73 +164,66 @@ function SegmentDialog({
             onChange={onNameChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="Start"
-            type="number"
             variant="outlined"
-            value={start}
+            value={start ?? ""}
             onChange={onStartChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="Stop"
-            type="number"
             variant="outlined"
-            value={stop}
+            value={stop ?? ""}
             onChange={onStopChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="StartY"
-            type="number"
             variant="outlined"
-            value={startY}
+            value={startY ?? ""}
             onChange={onStartYChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="StopY"
-            type="number"
             variant="outlined"
-            value={stopY}
+            value={stopY ?? ""}
             onChange={onStopYChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="Length"
-            type="number"
             variant="outlined"
-            value={length}
+            value={length ?? ""}
             onChange={onLengthChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="Grouping"
-            type="number"
             variant="outlined"
-            value={grouping}
+            value={grouping ?? ""}
             onChange={onGroupingChange}
           />
 
-          <TextField
+          <NumberTextField
             required
             margin="dense"
             label="Spacing"
-            type="number"
             variant="outlined"
-            value={spacing}
+            value={spacing ?? ""}
             onChange={onSpacingChange}
           />
         </DialogContent>

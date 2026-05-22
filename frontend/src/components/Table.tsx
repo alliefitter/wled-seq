@@ -33,6 +33,14 @@ function Table<T, F>({
     filters,
   });
 
+  const saveDataGridState = (state: unknown) => {
+    try {
+      localStorage.setItem("dataGridState", JSON.stringify(state));
+    } catch (error) {
+      console.error("Could not save state to localStorage", error);
+    }
+  };
+
   useEffect(() => {
     if (loading && fetchPrerequisites) {
       fetchPrerequisites();
@@ -53,6 +61,8 @@ function Table<T, F>({
       paginationMode="server"
       paginationModel={paginationModel}
       onPaginationModelChange={onPaginationModelChange}
+      pageSizeOptions={[10, 50, 100]}
+      onStateChange={saveDataGridState}
       {...props}
     />
   );

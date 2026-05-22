@@ -82,6 +82,7 @@ function PanelList({
           width: "100%",
           gridTemplateColumns: {
             xs: "1fr",
+            xl: "repeat(2, 1fr)",
           },
         }}
       >
@@ -96,19 +97,22 @@ function PanelList({
               };
 
               const copySelf = (copiedData: { [key: string]: unknown }) => {
-                setData((prev) => {
-                  return [
-                    ...prev,
-                    {
-                      ...Object.fromEntries(
-                        Object.entries(copiedData).filter(
-                          ([k, _]) => k !== "segments",
-                        ),
-                      ),
-                      segments: [],
-                    },
-                  ];
-                });
+                const copy = {
+                  ...Object.fromEntries(
+                    Object.entries(copiedData).filter(([k]) => k !== "segments"),
+                  ),
+                  segments: [],
+                };
+                setData((prev) => [
+                  ...prev.slice(0, i + 1),
+                  copy,
+                  ...prev.slice(i + 1),
+                ]);
+                setKeys((prev) => [
+                  ...prev.slice(0, i + 1),
+                  crypto.randomUUID(),
+                  ...prev.slice(i + 1),
+                ]);
               };
 
               return (
@@ -171,7 +175,16 @@ function PanelList({
               };
 
               const copySelf = (copiedData: { [key: string]: unknown }) => {
-                setData((prev) => [...prev, copiedData]);
+                setData((prev) => [
+                  ...prev.slice(0, i + 1),
+                  copiedData,
+                  ...prev.slice(i + 1),
+                ]);
+                setKeys((prev) => [
+                  ...prev.slice(0, i + 1),
+                  crypto.randomUUID(),
+                  ...prev.slice(i + 1),
+                ]);
               };
 
               return (

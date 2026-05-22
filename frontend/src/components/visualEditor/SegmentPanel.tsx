@@ -351,8 +351,8 @@ function SegmentPanel({
           sx={{
             width: "100%",
             gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(3, 1fr)",
+              xs: "repeat(3, 1fr)",
+              lg: "repeat(1, 1fr)",
             },
           }}
         >

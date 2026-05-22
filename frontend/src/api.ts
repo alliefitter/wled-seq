@@ -11,7 +11,7 @@ import type {
   SequenceListItem,
   SequenceResponse,
   Track,
-  WledHostResponse,
+  WledHostResponse
 } from "./types/api";
 import { getConfig } from "./config.ts";
 
@@ -76,7 +76,7 @@ export const executeSequence = async (
   sequence: LedSequence,
   segmentSetId: string,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/execute`, {
+  const response = await fetch(`${API_URL}/wled-host/execute`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

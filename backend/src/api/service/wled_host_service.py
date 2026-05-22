@@ -88,20 +88,20 @@ class WledHostService:
                     f"Error retrieving effects list for {host.id}",
                     extra={"status_code": response.status_code, "text": response.text},
                 )
+                raise HTTPException(502, f"Failed to retrieve effects from WLED device {host.id}")
 
             effects = response.json()
             response = await client.get("/json/fxdata")
             if response.is_error:
                 logger.error(
-                    f"Error retrieving effects list for {host.id}",
+                    f"Error retrieving fxdata for {host.id}",
                     extra={"status_code": response.status_code, "text": response.text},
                 )
+                raise HTTPException(502, f"Failed to retrieve fxdata from WLED device {host.id}")
 
             fx_data = response.json()
             processed_effects = []
             for i, effect in enumerate(effects):
-                if effect.lower() == "rainbow":
-                    print("foo")
                 processed_effect = EffectsItem(
                     id=i, value=effect, fields=[], uses_palette=True, colors=["Primary"]
                 )
@@ -154,6 +154,7 @@ class WledHostService:
                     f"Error retrieving palettes list for {host.id}",
                     extra={"status_code": response.status_code, "text": response.text},
                 )
+                raise HTTPException(502, f"Failed to retrieve palettes from WLED device {host.id}")
 
             return response.json()
 
